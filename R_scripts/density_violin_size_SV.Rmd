@@ -1,0 +1,446 @@
+---
+title: "violin"
+author: "Beant Kapoor"
+date: "2024-08-20"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# ---------------
+# SNIFFLES
+# ---------------
+
+```{r libraries and data - 30 bp to 1000 bp - Sniffles}
+library(ggplot2)
+library(dplyr)
+
+df <- read.table("sniffles_size_data.tsv", header = FALSE)
+
+colnames(df) <- c("type", "length")
+
+df$type <- as.factor(df$type)
+df$length <- as.integer(df$length)
+
+# filter for length 30 to 1,000 bp
+df_30_1000 <- df %>% 
+  filter(length > 30 & length <= 1000)
+
+# plot
+p1 <- ggplot(df_30_1000, aes(x=type, y=length, fill=type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(20,1100))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(0,1000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text=element_text(size=16, color = "black"))
+
+
+p1
+
+ggsave(filename = "sniffles_SV_size_distribution_30bp-1kb.png", p1, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 1 Kb < Length ≤  10 Kb sniffles}
+# filter for length 1,000 bp to 10 Kb
+df_1kb_10kb <- df %>% 
+  filter(length > 1000 & length <= 10000)
+
+# plot
+p_1kb_sniffles <- ggplot(df_1kb_10kb, aes(x=type, y=length, fill=type)) +
+    geom_violin() +
+  scale_y_continuous(limits=c(950,11000))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#1b9e77",
+                               "#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(1000, 10000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+ggsave(filename = "sniffles_SV_size_distribution_1kb-10kb.png", p_1kb_sniffles, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 10 Kb < Length ≤  100 Kb sniffles}
+# filter for length 10 kb to 100 Kb
+df_10kb_100kb <- df %>% 
+  filter(length > 10000 & length <= 100000)
+
+# plot
+p_10kb_sniffles <- ggplot(df_10kb_100kb, aes(x=type, y=length, fill=type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(9500, 110000))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#1b9e77",
+                               "#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(10000, 100000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+ggsave(filename = "sniffles_SV_size_distribution_10kb-100kb.png", p_10kb_sniffles, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 100 Kb < Length ≤  1 Mb sniffles}
+# filter for length 100 kb to 1 Mb
+df_100kb_1Mb <- df %>% 
+  filter(length > 100000 & length <= 1000000)
+
+# plot
+ggplot(df_100kb_1Mb, aes(x=type, y=length)) +
+  geom_violin() +
+  #scale_x_discrete(limits=c("DEL")) + 
+  scale_y_continuous(limits=c(99000, 1100000))+
+  geom_boxplot(width = 0.05)
+  #stat_summary(fun.data=mean_sdl, mult=1, 
+                 #geom="pointrange", color="red")
+```
+
+```{r 1 Mb < Length sniffles}
+# filter for length more than a Mb
+df_1Mb_and_more <- df %>% 
+  filter(length > 1000000)
+
+# plot
+ggplot(df_1Mb_and_more, aes(x=type, y=length)) +
+  geom_violin() +
+  #scale_x_discrete(limits=c("DEL")) + 
+  scale_y_continuous(limits=c(990000, 70000000))+
+  geom_boxplot(width = 0.05)
+  #stat_summary(fun.data=mean_sdl, mult=1, 
+                 #geom="pointrange", color="red")
+```
+
+# ---------------
+# CUTESV
+# ---------------
+
+```{r cutesv 30 to 1 kb}
+df_cutesv <- read.table("cutesv_size_data.tsv", header = FALSE)
+
+colnames(df_cutesv) <- c("type", "length")
+
+df_cutesv$type <- as.factor(df_cutesv$type)
+df_cutesv$length <- as.integer(df_cutesv$length)
+
+# filter for length 30 to 1,000 bp
+df_cutesv_30_1000 <- df_cutesv %>% 
+  filter(length > 30 & length <= 1000)
+
+# plot
+p2 <- ggplot(df_cutesv_30_1000, aes(x=type, y=length, fill=type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(20,1100))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+   scale_fill_manual(values = c("#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(0,1000)) +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        legend.position = "none",
+        axis.text=element_text(size=16, color = "black"))
+
+p2
+
+ggsave(filename = "cutesv_SV_size_distribution_30bp-1kb.png", p2, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 1 Kb < Length ≤  10 Kb sniffles}
+# filter for length 1,000 bp to 10 Kb
+df_cutesv_1kb_10kb <- df_cutesv %>% 
+  filter(length > 1000 & length <= 10000)
+
+# plot
+p_1kb_cutesv <- ggplot(df_cutesv_1kb_10kb, aes(x=type, y=length, fill = type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(950,11000))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#1b9e77",
+                               "#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(1000, 10000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+p_1kb_cutesv
+
+ggsave(filename = "cutesv_SV_size_distribution_1kb-10kb.png", p_1kb_cutesv, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 10 Kb < Length ≤  100 Kb cutesv}
+# filter for length 10 kb to 100 Kb
+df_cutesv_10kb_100kb <- df_cutesv %>% 
+  filter(length > 10000 & length <= 100000)
+
+# plot
+p_10kb_cutesv <- ggplot(df_cutesv_10kb_100kb, aes(x=type, y=length, fill=type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(9500, 110000))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#1b9e77",
+                               "#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(10000, 100000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+p_10kb_cutesv
+
+ggsave(filename = "cutesv_SV_size_distribution_10kb-100kb.png", p_10kb_cutesv, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+# ---------------
+# SVIM
+# ---------------
+
+```{r 30 bp to 1000 bp - svim}
+df_svim <- read.table("svim_size_data.tsv", header = FALSE)
+
+colnames(df_svim) <- c("type", "length")
+
+df_svim$type <- as.factor(df_svim$type)
+df_svim$length <- as.integer(df_svim$length)
+
+# filter for length 30 to 1,000 bp
+df_svim_30_1000 <- df_svim %>% 
+  filter(length > 30 & length <= 1000)
+
+# plot
+p3 <- ggplot(df_svim_30_1000, aes(x=type, y=length, fill=type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(20,1100))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+   scale_fill_manual(values = c("#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(0,1000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text=element_text(size=16, color = "black"))
+
+p3
+
+ggsave(filename = "svim_SV_size_distribution_30bp-1kb.png", p3, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 1 Kb < Length ≤  10 Kb svim}
+# filter for length 1,000 bp to 10 Kb
+df_svim_1kb_10kb <- df_svim %>% 
+  filter(length > 1000 & length <= 10000)
+
+# plot
+p_1kb_svim <- ggplot(df_svim_1kb_10kb, aes(x=type, y=length, fill = type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(950,11000))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#1b9e77",
+                               "#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(1000, 10000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+ggsave(filename = "svim_SV_size_distribution_1kb-10kb.png", p_1kb_svim, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 10 Kb < Length ≤  100 Kb svim}
+# filter for length 10 kb to 100 Kb
+df_svim_10kb_100kb <- df_svim %>% 
+  filter(length > 10000 & length <= 100000)
+
+# plot
+p_10kb_svim <- ggplot(df_svim_10kb_100kb, aes(x=type, y=length, fill=type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(9500, 110000))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#1b9e77",
+                               "#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(10000, 100000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+p_10kb_svim
+
+ggsave(filename = "svim_SV_size_distribution_10kb-100kb.png", p_10kb_svim, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 100 Kb < Length ≤  1 Mb sniffles}
+# filter for length 100 kb to 1 Mb
+df_svim_100kb_1Mb <- df_svim %>% 
+  filter(length > 100000 & length <= 1000000)
+
+# plot
+ggplot(df_svim_100kb_1Mb, aes(x=type, y=length)) +
+  geom_violin(scale = "width") +
+  #scale_x_discrete(limits=c("DEL")) + 
+  scale_y_continuous(limits=c(99000, 1100000))+
+  geom_boxplot(width = 0.05)
+  #stat_summary(fun.data=mean_sdl, mult=1, 
+                 #geom="pointrange", color="red")
+```
+
+```{r 1 Mb < Length sniffles}
+# filter for length more than 1 MB
+df_svim_1Mb_and_more <- df_svim %>% 
+  filter(length > 1000000)
+
+# plot
+ggplot(df_svim_1Mb_and_more, aes(x=type, y=length)) +
+  geom_violin(scale = "width") +
+  #scale_x_discrete(limits=c("DEL")) + 
+  scale_y_continuous(limits=c(990000, 10000000))+
+  geom_boxplot(width = 0.05)
+  #stat_summary(fun.data=mean_sdl, mult=1, 
+                 #geom="pointrange", color="red")
+```
+
+# ---------------
+# CONSENSUS
+# ---------------
+
+```{r 30 bp to 1000 bp - consensus}
+df_consensus <- read.table("consensus_size_data.tsv", header = FALSE)
+
+colnames(df_consensus) <- c("type", "length")
+
+df_consensus$type <- as.factor(df_consensus$type)
+df_consensus$length <- as.integer(df_consensus$length)
+
+# filter for length 30 to 1,000 bp
+df_consensus_30_1000 <- df_consensus %>% 
+  filter(length > 30 & length <= 1000)
+
+# plot
+p4 <- ggplot(df_consensus_30_1000, aes(x=type, y=length, fill=type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(20,1100))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+   scale_fill_manual(values = c("#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(0,1000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text=element_text(size=16, color = "black"))
+
+ggsave(filename = "consensus_SV_size_distribution_30bp-1kb.png", p4, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 1 Kb < Length ≤  10 Kb consensus}
+# filter for length 1,000 bp to 10 Kb
+df_consensus_1kb_10kb <- df_consensus %>% 
+  filter(length > 1000 & length <= 10000)
+
+# plot
+p_1kb_consensus <- ggplot(df_consensus_1kb_10kb, aes(x=type, y=length, fill = type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(950,11000))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#1b9e77",
+                               "#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(1000, 10000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+ggsave(filename = "consensus_SV_size_distribution_1kb-10kb.png", p_1kb_consensus, width = 5, height = 5, dpi = 300, units = "in", device = "png")
+```
+
+```{r 10 Kb < Length ≤  100 Kb svim}
+# filter for length 10 kb to 100 Kb
+df_consensus_10kb_100kb <- df_consensus %>% 
+  filter(length > 10000 & length <= 100000)
+
+# plot
+p_10kb_consensus <- ggplot(df_consensus_10kb_100kb, aes(x=type, y=length, fill=type)) +
+  geom_violin() +
+  scale_y_continuous(limits=c(9500, 110000))+
+  geom_boxplot(width = 0.05, outlier.size = 0.1) +
+  theme_bw() +
+  scale_fill_manual(values = c("#1b9e77",
+                               "#d95f02",
+                               "#7570b3",
+                               "#e7298a",
+                               "#66a61e")) +
+  coord_cartesian(ylim = c(10000, 100000)) +
+  theme(legend.position = 'none') +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+p_10kb_consensus
+```
+
+```{r 100 Kb < Length ≤  1 Mb sniffles}
+# filter for length 100 kb to 1 Mb
+df_consensus_100kb_1Mb <- df_consensus %>% 
+  filter(length > 100000 & length <= 1000000)
+
+# plot
+ggplot(df_consensus_100kb_1Mb, aes(x=type, y=length)) +
+  geom_violin(scale = "width") +
+  scale_x_discrete(limits=c("DEL", "DUP", "INS", "INV")) + 
+  scale_y_continuous(limits=c(99000, 1100000))+
+  geom_boxplot(width = 0.05)
+  #stat_summary(fun.data=mean_sdl, mult=1, 
+                 #geom="pointrange", color="red")
+```
+
+```{r 1 Mb < Length sniffles}
+# filter for length more than 1 MB
+df_consensus_1Mb_and_more <- df_consensus %>% 
+  filter(length > 1000000)
+
+# plot
+ggplot(df_consensus_1Mb_and_more, aes(x=type, y=length)) +
+  geom_violin(scale = "width") +
+  scale_x_discrete(limits=c("DEL", "DUP", "INS", "INV")) + 
+  scale_y_continuous(limits=c(4000000, 10000000))+
+  geom_boxplot(width = 0.05)
+  #stat_summary(fun.data=mean_sdl, mult=1, 
+                 #geom="pointrange", color="red")
+```
