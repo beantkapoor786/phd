@@ -1,0 +1,124 @@
+---
+title: "Truvari line plot"
+author: "Beant Kapoor"
+date: "2024-10-08"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r packages and data}
+library(ggplot2)
+library(reshape2)
+library(stringr)
+library(ggpubr)
+
+# sniffles data
+sniffles <- data.frame(x = c("Raw calls", "Remove variants with missing GT", "Remove QUAL<20", "Remove SV>1Mb", "Remove IMPRECISE variants", "Remove 0/0 in Ref", "Remove SVs with Mendelian Inheritance error"),
+                       precision = c(0.341, 0.365, 0.365, 0.365, 0.433, 0.437, 0.776),
+                       recall = c(0.328, 0.325, 0.325, 0.325, 0.313, 0.311, 0.291),
+                       f1 = c(0.334, 0.344, 0.344, 0.344, 0.363, 0.363, 0.424))
+
+# cutesv data
+cutesv <- data.frame(x = c("Raw calls", "Remove variants with missing GT", "Remove QUAL<20", "Remove SV>1Mb", "Remove IMPRECISE variants", "Remove 0/0 in Ref", "Remove SVs with Mendelian Inheritance error"),
+                    precision = c(0.483, 0.483, 0.541, 0.577, 0.577, 0.578, 0.886),
+                    recall = c(0.990, 0.990, 0.982, 0.958, 0.958, 0.958, 0.915),
+                    f1 = c(0.649, 0.649, 0.698, 0.720, 0.720, 0.721, 0.900))
+
+# svim data
+svim <- data.frame(x = c("Raw calls", "Remove variants with missing GT", "Remove QUAL<20", "Remove SV>1Mb", "Remove IMPRECISE variants", "Remove 0/0 in Ref", "Remove SVs with Mendelian Inheritance error"),
+                  precision = c(0.361, 0.361, 0.577, 0.577, 0.577, 0.578, 0.802),
+                  recall = c(0.985, 0.985, 0.958, 0.958, 0.958, 0.958, 0.941),
+                  f1 = c(0.528, 0.528, 0.720, 0.720, 0.720, 0.721, 0.866))
+                    
+```
+
+
+```{r Sniffles}
+# reshape to long format for plotting
+sniffles_long <- melt(sniffles, id = 'x')
+sniffles_long$x <- as.factor(sniffles_long$x)
+sniffles_long$variable <- as.factor(sniffles_long$variable)
+
+# plot
+p1 <- ggplot(sniffles_long, aes(x = factor(x), y = value, colour = variable, group = variable)) +      geom_line(linetype = "dashed", size = 1.5) +
+     geom_point(size = 2.5) +
+    scale_x_discrete(limits = c("Raw calls", "Remove variants with missing GT", "Remove QUAL<20",     "Remove SV>1Mb", "Remove IMPRECISE variants", "Remove 0/0 in Ref", "Remove SVs with Mendelian Inheritance error")) +
+  theme_bw() +
+  theme(axis.text.x = element_blank()) +
+  theme(axis.text.y = element_text(size = 18)) +
+  theme(legend.position = "none") +
+  theme(axis.title.y = element_blank()) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
+  scale_color_manual(values=c("#1b9e77",
+                              "#7570b3", 
+                              "#d95f02"))
+  
+p1
+```
+
+```{r cutesv}
+# reshape to long format for plotting
+cutesv_long <- melt(cutesv, id = 'x')
+cutesv_long$x <- as.factor(cutesv_long$x)
+cutesv_long$variable <- as.factor(cutesv_long$variable)
+
+# plot
+p2 <- ggplot(cutesv_long, aes(x = factor(x), y = value, colour = variable, group = variable)) +      geom_line(linetype = "dashed", size = 1.5) +
+     geom_point(size = 2.5) +
+    scale_x_discrete(limits = c("Raw calls", "Remove variants with missing GT", "Remove QUAL<20",     "Remove SV>1Mb", "Remove IMPRECISE variants", "Remove 0/0 in Ref", "Remove SVs with Mendelian Inheritance error")) +
+  theme_bw() +
+  theme(axis.text.x = element_blank()) +
+  theme(axis.text.y = element_text(size = 18)) +
+  theme(legend.position = "none") +
+  theme(axis.title.y = element_blank()) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
+  scale_color_manual(values=c("#1b9e77",
+                              "#7570b3", 
+                              "#d95f02"))
+  
+p2
+```
+
+```{r svim}
+# reshape to long format for plotting
+svim_long <- melt(svim, id = 'x')
+svim_long$x <- as.factor(svim_long$x)
+svim_long$variable <- as.factor(svim_long$variable)
+
+# plot
+p3 <- ggplot(svim_long, aes(x = factor(x), y = value, colour = variable, group = variable)) +      geom_line(linetype = "dashed", size = 1.5) +
+     geom_point(size = 2.5) +
+    scale_x_discrete(limits = c("Raw calls", "Remove variants with missing GT", "Remove QUAL<20",     "Remove SV>1Mb", "Remove IMPRECISE variants", "Remove 0/0 in Ref", "Remove SVs with Mendelian Inheritance error")) +
+  theme_bw() +
+  theme(axis.text.x = element_blank()) +
+  theme(axis.text.y = element_text(size = 18)) +
+  theme(legend.position = "none") +
+  theme(axis.title.y = element_blank()) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
+  scale_color_manual(values=c("#1b9e77",
+                              "#7570b3", 
+                              "#d95f02"))
+  
+p3
+```
+
+```{r combine all}
+# sniffles
+ggsave(filename = "sniffles_truvari.png", p1, width = 8, height = 12, dpi = 500, units = "in", device = "png")
+
+# cutesv
+ggsave(filename = "cutesv_truvari.png", p2, width = 8, height = 12, dpi = 500, units = "in", device = "png")
+
+# svim
+ggsave(filename = "svim_truvari.png", p3, width = 8, height = 12, dpi = 500, units = "in", device = "png")
+
+all <- ggarrange(p1, p2, p3,
+                 labels = c("A", "B", "C"),
+                    ncol = 1, nrow = 3)
+
+ggsave(filename = "truvari_all_long.png", all, width = 7, height = 13, dpi = 300, units = "in", device = "png")
+```
+
+
+

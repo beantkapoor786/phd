@@ -1,0 +1,75 @@
+---
+title: "SV_overlap_genes"
+author: "Beant Kapoor"
+date: "2023-05-16"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r load packages and data}
+# packages
+library(GenomicRanges)
+library(IRanges)
+
+# insertions
+ins <- read.csv("insertions.bed", header = FALSE, sep = "\t", col.names = c("chr", "start", "end", "ID"))
+
+# deletions
+del <- read.csv("deletions.bed", header = FALSE, sep = "\t", col.names = c("chr", "start", "end", "ID"))
+
+# genes
+genes <- read.csv("genes.bed", header = FALSE, sep = "\t", col.names = c("chr", "start", "end", "ID"))
+```
+
+```{r insertions and genes}
+# convert ins df to granges object
+g_ins <- makeGRangesFromDataFrame(ins, keep.extra.columns = TRUE, ignore.strand = TRUE, seqnames.field = "chr", start.field = "start", end.field = "end")
+
+# let's look at g_ins
+head(g_ins) #looks good!
+
+# convert genes df to granges object
+g_genes <- makeGRangesFromDataFrame(genes, keep.extra.columns = TRUE, ignore.strand = TRUE, seqnames.field = "chr", start.field = "start", end.field = "end")
+head(g_genes)
+
+# Find row indices of insertions which are strictly inside genes
+findOverlaps(query = g_ins, subject = g_genes, maxgap = -1L, type = "within")
+
+# Number of insertions strictly inside genes
+sum(countOverlaps(query = g_ins, subject = g_genes, maxgap = -1L, minoverlap = 2L, type = "within"))
+# 8,933
+
+# Number of insertions strictly outside genes
+length(setdiff(x = g_ins, y = g_genes))
+# 43,511
+
+# Number of insertions overlapping genes partially
+# 52,413 - 43,438 - 8,933 = 42
+```
+
+```{r deletions and genes}
+# convert del df to granges object
+g_del <- makeGRangesFromDataFrame(del, keep.extra.columns = TRUE, ignore.strand = TRUE, seqnames.field = "chr", start.field = "start", end.field = "end")
+
+# let's look at g_del
+head(g_del) #looks good!
+
+# Deletions overlapping genes
+findOverlaps(query = g_del, subject = g_genes, minoverlap = 1L, type = "any")
+sum(countOverlaps(query = g_del, subject = g_genes, minoverlap = 1L, type = "any"))
+
+# Find row indices of deletions which are strictly inside genes
+findOverlaps(query = g_del, subject = g_genes, type = "within")
+
+# Number of deletions strictly inside genes
+sum(countOverlaps(query = g_del, subject = g_genes, type = "within"))
+# 8,922
+
+# Number of deletions strictly outside genes
+length(setdiff(x = g_del, y = g_genes))
+# 32,355
+```
+
+
+

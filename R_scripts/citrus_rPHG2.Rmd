@@ -1,0 +1,268 @@
+---
+title: "citrus_rPHG2"
+author: "Beant Kapoor"
+date: "2024-06-04"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load packages}
+library(GenomicRanges)
+library(ggplot2)
+#install.packages('rJava')
+options(java.parameters = "-Xmx4g")
+library(rJava)                                
+#install.packages("rstudioapi")
+#library(rstudioapi)
+#install.packages("pak")
+#pak::pak("maize-genetics/rPHG2")
+library('rPHG2')
+```
+
+```{r extracting stats from hVCF files}
+# Initialize with PHGv2 JARs
+initPhg("/Users/beantkapoor/Google Drive/My Drive/PhD/Projects/citrus/analyses/3_rPHG2/phg/lib")
+
+# Create a connection
+locCon <- list.files("/Users/beantkapoor/Library/CloudStorage/GoogleDrive-bkapoor@vols.utk.edu/My Drive/PhD/Projects/citrus/analyses/3_rPHG2/hvcf_files/") |>
+    PHGLocalCon()
+
+# Build a graph
+graph <- locCon |> buildHaplotypeGraph()
+graph
+
+# direct data from Java to R
+graph |> javaRefObj()
+
+
+hapIds <- graph |> readHapIds()
+
+hapProfile <- data.frame(
+    ref_range  = hapIds |> colnames(),
+    n_uniq_ids = hapIds |> apply(2, \(it) it |> unique() |> length())
+)
+
+# sample Ids
+graph |> readSamples()
+
+# reference range
+graph |> readRefRanges()
+
+# return all haplotype IDs as a sample x reference range matrix object
+m <- graph |> readHapIds()
+m_df <- as.data.frame(m)
+
+# Show only first 3 columns
+m[, 1:3]
+
+# haplotype ID metadata
+graph |> readHapIdMetaData()
+
+# haplotype ID positions
+graph |> readHapIdPosMetaData()
+
+# all hVCF data
+phgDs <- graph |> readPhgDataSet()
+phgDs
+
+# filter by sample
+phgDs |> filterSamples(c("australasica_primary", "wilking_primary"))
+
+# Get number of samples/taxa
+phgDs |> numberOfSamples()
+
+# Get number of chromosomes
+phgDs |> numberOfChromosomes()
+
+# Get number of reference ranges
+phgDs |> numberOfRefRanges()
+
+# count of unique haplotype IDs
+uniq_hap <- phgDs |> numberOfHaplotypes(byRefRange = TRUE)
+uniq_hap
+uniq_hap_df <-  as.data.frame(uniq_hap)
+
+# total number of unique haplotypes
+sum(uniq_hap_df$n_haplo)
+
+# visualize counts of unique haplotype IDs
+phgDs |> plotHaploCounts()
+
+#df
+hapids_df <- as.data.frame(hapIds)
+hapids_df$`Scaffold_01:10564545-10566832`
+
+# scaffold 1
+query <- GRanges(
+    seqnames = c("Scaffold_01"),
+    ranges = IRanges(start = 10000000, end = 11000000)
+)
+
+# line plot
+ggsave("images/scaffold_01_unique_haplotype_count_plot.png", width = 8, height = 5, units = "in", dpi = 300) 
+phgDs |> plotHaploCounts(gr = query)
+dev.off()
+
+# bar plot
+phgDs |> plotHaploCounts(gr = query, geom = "b")
+
+# distributions of haplotype IDs
+phgDs |> plotHaploDist()
+ggsave("images/distribution_haplotype_counts.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+```
+
+```{r extracting stats from alignment files}
+# path to files
+metricDir <- "/Users/beantkapoor/Google Drive/My Drive/PhD/Projects/citrus/analyses/3_rPHG2/alignment_files"
+
+# pass the character variable to PHGmetrics constructor
+metData <- PHGMetrics(metricDir)
+
+# list object of data.frame tables
+metData |> metricsTable()
+metData
+
+# metadata for wilking primary
+metData |> metricsTable(name = metData$wilking_primary_fortune_primary)
+
+# --------------------
+# dot plots
+# --------------------
+
+# australasica primary
+metData |> plotDot(metData$australasica_primary_fortune_primary)
+ggsave("images/australasica_primary_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# australasica alternate
+metData |> plotDot(metData$australasica_alternate_fortune_primary)
+ggsave("images/australasica_alternate_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# australis primary
+metData |> plotDot(metData$australis_primary_fortune_primary)
+ggsave("images/australis_primary_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# australis alternate
+metData |> plotDot(metData$australis_alternate_fortune_primary)
+ggsave("images/australis_alternate_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# fallglo primary
+metData |> plotDot(metData$fallglo_primary_fortune_primary)
+ggsave("images/fallglo_primary_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# fallglo alternate
+metData |> plotDot(metData$fallglo_alternate_fortune_primary)
+ggsave("images/fallglo_alternate_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# fortune alternate
+metData |> plotDot(metData$fortune_alternate_fortune_primary)
+ggsave("images/fortune_alternate_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# inodora primary
+metData |> plotDot(metData$inodora_primary_fortune_primary)
+ggsave("images/inodora_primary_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# inodora alternate
+metData |> plotDot(metData$inodora_alternate_fortune_primary)
+ggsave("images/inodora_alternate_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# wilking primary
+metData |> plotDot(metData$wilking_primary_fortune_primary)
+ggsave("images/wilking_primary_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# wilking alternate
+metData |> plotDot(metData$wilking_alternate_fortune_primary)
+ggsave("images/wilking_alternate_dotplot.png", width = 14, height = 10, units = "in", dpi = 300)
+dev.off()
+
+# gvcf metrics
+metData |> plotGvcf(metData$VCFMetrics)
+
+# --------------------------
+# granular approach
+# --------------------------
+
+# scaffold 01
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_01)
+ggsave("images/gvcf_stats_scaffold_01.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# scaffold 02
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_02)
+ggsave("images/gvcf_stats_scaffold_02.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# scaffold 03
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_03)
+ggsave("images/gvcf_stats_scaffold_03.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# scaffold 04
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_04)
+ggsave("images/gvcf_stats_scaffold_04.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# scaffold 05
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_05)
+ggsave("images/gvcf_stats_scaffold_05.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# scaffold 06
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_06)
+ggsave("images/gvcf_stats_scaffold_06.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# scaffold 07
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_07)
+ggsave("images/gvcf_stats_scaffold_07.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# scaffold 08
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_08)
+ggsave("images/gvcf_stats_scaffold_08.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# scaffold 09
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ Scaffold_09)
+ggsave("images/gvcf_stats_scaffold_09.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# cumulative approach
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ ALL)
+ggsave("images/gvcf_stats_ALL.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+
+# dimensions
+metData |> plotGvcf(f = ref_length + num_del ~ ALL, nCol = 1)
+
+# can change tags
+metData |> plotGvcf(f = CORE ~ ALL, tag = "i")
+
+# can control sample names and color of the bar
+refData <- data.frame(
+    sample     = c("australasica_alternate", "australasica_primary", "australis_alternate", "australis_primary", "fallglo_alternate", "fallglo_primary", "fortune_alternate", "inodora_alternate", "inodora_primary", "wilking_alternate", "wilking_primary"),
+    species = c("Australian Lime", "Australian Lime", "Australian Lime", "Australian Lime", "Mandarin", "Mandarin", "Mandarin", "Australian Lime", "Australian Lime", "Mandarin", "Mandarin")
+)
+
+# ALL by species color
+metData |> plotGvcf(f = num_snps + num_ins + num_del + num_bases_inserted + num_bases_deleted + percent_identity_with_ref + percent_mapped_to_ref + largest_insertion + largest_deletion ~ ALL, mData = refData)
+ggsave("images/gvcf_stats_ALL_colored_by_species.png", width = 14, height = 12, units = "in", dpi = 300)
+dev.off()
+```
+
+
