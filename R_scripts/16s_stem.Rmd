@@ -1,0 +1,918 @@
+---
+title: "16s_stem"
+author: "Beant Kapoor"
+date: "3/7/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+### General Comment - Objects in this file contain the name 'otu' however they represent ASV in this case.
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r Input Data and Subset}
+#We already have imported the otu file and taxonomy file from mothur to this R project/environment. We just need to import the metadata for stem niche and subset the data accordingly.
+stem_metadata <- read.table("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/metadata/16s_stem.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+stem_sample_names <- stem_metadata$Sample
+
+#Here I use the subset function to pull out just the samples belonging to stem
+stem_otu <- subset(whole_otu, rownames(whole_otu) %in% stem_sample_names)
+```
+
+```{r Data Clean-up}
+#Let's remove the columns which are not needed
+stem_otu_only <- stem_otu[, 3:170189]
+
+#Here I am removing any OTU that is not present in any samples. What the below function is doing is summing the columns (OTUs) and any OTU that equals 0 is removed from the dataset. This will hopefully speed up downstream analyses.
+stem_pure <- stem_otu_only[, colSums(stem_otu_only) > 0]
+```
+
+```{r Rarefaction}
+#Below I create the rarefaction curves for each sample using the rarecurve function from vegan. 
+library(vegan)
+rare_curve_stem <- rarecurve(stem_pure)
+
+#I then create an object that spans the range of the OTU richness. This will be used to plot the vertical line in my ggplot rarefaction curve. 
+f_stem <- (0:2000)
+
+#I then create objects containing the x and y coordinates values for each stratum.
+sequences_stem40<-attr(rare_curve_stem[[40]],which="Subsample")
+sequences_stem39<-attr(rare_curve_stem[[39]],which="Subsample")
+sequences_stem38<-attr(rare_curve_stem[[38]],which="Subsample")
+sequences_stem37<-attr(rare_curve_stem[[37]],which="Subsample")
+sequences_stem36<-attr(rare_curve_stem[[36]],which="Subsample")
+sequences_stem35<-attr(rare_curve_stem[[35]],which="Subsample")
+sequences_stem34<-attr(rare_curve_stem[[34]],which="Subsample")
+sequences_stem33<-attr(rare_curve_stem[[33]],which="Subsample")
+sequences_stem32<-attr(rare_curve_stem[[32]],which="Subsample")
+sequences_stem31<-attr(rare_curve_stem[[31]],which="Subsample")
+sequences_stem30<-attr(rare_curve_stem[[30]],which="Subsample")
+sequences_stem29<-attr(rare_curve_stem[[29]],which="Subsample")
+sequences_stem28<-attr(rare_curve_stem[[28]],which="Subsample")
+sequences_stem27<-attr(rare_curve_stem[[27]],which="Subsample")
+sequences_stem26<-attr(rare_curve_stem[[26]],which="Subsample")
+sequences_stem25<-attr(rare_curve_stem[[25]],which="Subsample")
+sequences_stem24<-attr(rare_curve_stem[[24]],which="Subsample")
+sequences_stem23<-attr(rare_curve_stem[[23]],which="Subsample")
+sequences_stem22<-attr(rare_curve_stem[[22]],which="Subsample")
+sequences_stem21<-attr(rare_curve_stem[[21]],which="Subsample")
+sequences_stem20<-attr(rare_curve_stem[[20]],which="Subsample")
+sequences_stem19<-attr(rare_curve_stem[[19]],which="Subsample")
+sequences_stem18<-attr(rare_curve_stem[[18]],which="Subsample")
+sequences_stem17<-attr(rare_curve_stem[[17]],which="Subsample")
+sequences_stem16<-attr(rare_curve_stem[[16]],which="Subsample")
+sequences_stem15<-attr(rare_curve_stem[[15]],which="Subsample")
+sequences_stem14<-attr(rare_curve_stem[[14]],which="Subsample")
+sequences_stem13<-attr(rare_curve_stem[[13]],which="Subsample")
+sequences_stem12<-attr(rare_curve_stem[[12]],which="Subsample")
+sequences_stem11<-attr(rare_curve_stem[[11]],which="Subsample")
+sequences_stem10<-attr(rare_curve_stem[[10]],which="Subsample")
+sequences_stem9<-attr(rare_curve_stem[[9]],which="Subsample")
+sequences_stem8<-attr(rare_curve_stem[[8]],which="Subsample")
+sequences_stem7<-attr(rare_curve_stem[[7]],which="Subsample")
+sequences_stem6<-attr(rare_curve_stem[[6]],which="Subsample")
+sequences_stem5<-attr(rare_curve_stem[[5]],which="Subsample")
+sequences_stem4<-attr(rare_curve_stem[[4]],which="Subsample")
+sequences_stem3<-attr(rare_curve_stem[[3]],which="Subsample")
+sequences_stem2<-attr(rare_curve_stem[[2]],which="Subsample")
+sequences_stem1<-attr(rare_curve_stem[[1]],which="Subsample")
+
+#Here I plot the rarefaction curves. 
+
+library(ggplot2)
+library(ggpubr)
+
+rarefaction_chart_stem <- ggplot() +
+  geom_line(aes(x=sequences_stem40,y=rare_curve_stem[[40]]),size=1)+
+  geom_line(aes(x=sequences_stem39,y=rare_curve_stem[[39]]), size=1)+
+  geom_line(aes(x=sequences_stem38,y=rare_curve_stem[[38]]),size=1)+
+  geom_line(aes(x=sequences_stem37,y=rare_curve_stem[[37]]),size=1)+
+  geom_line(aes(x=sequences_stem36,y=rare_curve_stem[[36]]),size=1)+
+  geom_line(aes(x=sequences_stem35,y=rare_curve_stem[[35]]),size=1)+
+  geom_line(aes(x=sequences_stem34,y=rare_curve_stem[[34]]), size=1)+
+  geom_line(aes(x=sequences_stem33,y=rare_curve_stem[[33]]), size=1)+
+  geom_line(aes(x=sequences_stem32,y=rare_curve_stem[[32]]),size=1)+
+  geom_line(aes(x=sequences_stem31,y=rare_curve_stem[[31]]),size=1 )+
+  geom_line(aes(x=sequences_stem30,y=rare_curve_stem[[30]]),size=1)+
+  geom_line(aes(x=sequences_stem29,y=rare_curve_stem[[29]]),size=1)+
+  geom_line(aes(x=sequences_stem28,y=rare_curve_stem[[28]]),size=1)+
+  geom_line(aes(x=sequences_stem27,y=rare_curve_stem[[27]]),size=1)+
+  geom_line(aes(x=sequences_stem26,y=rare_curve_stem[[26]]),size=1)+
+  geom_line(aes(x=sequences_stem25,y=rare_curve_stem[[25]]), size=1)+
+  geom_line(aes(x=sequences_stem24,y=rare_curve_stem[[24]]),size=1)+
+  geom_line(aes(x=sequences_stem23,y=rare_curve_stem[[23]]),size=1)+
+  geom_line(aes(x=sequences_stem22,y=rare_curve_stem[[22]]),size=1)+
+  geom_line(aes(x=sequences_stem21,y=rare_curve_stem[[21]]),size=1)+
+  geom_line(aes(x=sequences_stem20,y=rare_curve_stem[[20]]),size=1)+
+  geom_line(aes(x=sequences_stem19,y=rare_curve_stem[[19]]), size=1)+
+  geom_line(aes(x=sequences_stem18,y=rare_curve_stem[[18]]),size=1)+
+  geom_line(aes(x=sequences_stem17,y=rare_curve_stem[[17]]),size=1)+
+  geom_line(aes(x=sequences_stem16,y=rare_curve_stem[[16]]),size=1)+
+  geom_line(aes(x=sequences_stem15,y=rare_curve_stem[[15]]),size=1)+
+  geom_line(aes(x=sequences_stem14,y=rare_curve_stem[[14]]), size=1)+
+  geom_line(aes(x=sequences_stem13,y=rare_curve_stem[[13]]), size=1)+
+  geom_line(aes(x=sequences_stem12,y=rare_curve_stem[[12]]),size=1)+
+  geom_line(aes(x=sequences_stem11,y=rare_curve_stem[[11]]),size=1 )+
+  geom_line(aes(x=sequences_stem10,y=rare_curve_stem[[10]]),size=1)+
+  geom_line(aes(x=sequences_stem9,y=rare_curve_stem[[9]]),size=1)+
+  geom_line(aes(x=sequences_stem8,y=rare_curve_stem[[8]]),size=1)+
+  geom_line(aes(x=sequences_stem7,y=rare_curve_stem[[7]]),size=1)+
+  geom_line(aes(x=sequences_stem6,y=rare_curve_stem[[6]]),size=1)+
+  geom_line(aes(x=sequences_stem5,y=rare_curve_stem[[5]]), size=1)+
+  geom_line(aes(x=sequences_stem4,y=rare_curve_stem[[4]]),size=1)+
+  geom_line(aes(x=sequences_stem3,y=rare_curve_stem[[3]]),size=1)+
+  geom_line(aes(x=sequences_stem2,y=rare_curve_stem[[2]]),size=1)+
+  geom_line(aes(x=sequences_stem1,y=rare_curve_stem[[1]]),size=1)+
+  geom_vline(xintercept = 2030, linetype = "dashed")+
+  ylim(0, 2000)+
+  xlim(0, 26000)+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+       panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("OTU Richness", sep=""))))+
+  labs(title = 'Stem 16S')
+rarefaction_chart_stem
+
+ggsave(filename = 'stem_16s_rarefaction_chart.png', path = "/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/Stem_16s/Results", rarefaction_chart_stem, dpi = 300, width = 5, height = 5, units = 'in')
+
+#Here we are rarefying the data using the rrarefy function from vegan. I first use the sort function to determine the lowest number of sequences in a sample. 
+sort(rowSums(stem_pure)) #We are going to rarefy it to 2030 and we will lose two samples 19CF1524 and 19CF1514
+
+#Then using the rrarefy function from vegan, I rarefy my samples. The rarefaction cutoff or "sample" value is determined by evaluating my rarefaction curves and choosing the number of sequences that minimizes sample loss but maximizes sampling depth.
+rare_otu_stem <- as.data.frame(rrarefy(stem_pure, sample = 2030)) #In this case we are losing two samples so we have to subset our data - 19CF1524 AND 19CF1514
+
+#Because the rrarefy function doesn't automatically remove samples from the dataframe I subset the rarefied dataframe to remove unrarefied samples (those less than the minimum sequencing depth).
+rare_otu_stem <- as.data.frame(subset(rare_otu_stem, rowSums(rare_otu_stem) >= 2030))
+
+#I am now removing OTUs present in the OTU table that were only present in samples removed following rarefaction. These OTUs will have column sums of 0.
+rare_otu_stem <- rare_otu_stem[, colSums(rare_otu_stem) > 0]
+
+#The following line is for saving the rarefied OTU table. This file is later reloaded to be used in downstream analyses. This is done to maintain consistency of results because rarefying generates slightly different results each time.
+#write.table(rare_otu_stem, "/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/Stem_16s/Tables_from_R/16s_stem_rarefied_otu.shared", sep = '\t', row.names = TRUE, col.names = TRUE)
+
+#I am now removing singleton OTUs (OTUs with only 1 representative sequence following rarefaction). This is to limit the effects of rare species on our distance matrices used during ordination.  
+rare_otu_stem_no_singletons <- rare_otu_stem[, colSums(rare_otu_stem) > 1]
+
+#The following line is for saving the rarefied OTU table with singletons removed. This file is later reloaded to be used in downstream analyses. This is done to maintain consistency of results because rarefying generates slightly different results each time. 
+#write.table(rare_otu_stem_no_singletons, "/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/Stem_16s/Tables_from_R/16s_stem_rarefied_no_singletons.shared", sep = '\t', row.names = TRUE, col.names = TRUE)
+```
+
+```{r Relative abundance chart - Phylum}
+#Now that samples have been rarefied I can perform alpha and beta diversity analyses on my data sets. To begin I first reformat my OTU table so that I can do some filtering and add taxonomy information.
+rare_otu_stem_no_singletons <- read.table("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/Stem_16s/Tables_from_R/16s_stem_rarefied_no_singletons.shared", header = TRUE, sep = '\t')
+
+rare_otu_stem <- read.table("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/Stem_16s/Tables_from_R/16s_stem_rarefied_otu.shared", header = TRUE, sep = "\t")
+
+#I now transpose my OTU table so that I can begin to add in taxonomy information.
+trans_otu_stem <- as.data.frame(t(rare_otu_stem_no_singletons))
+
+#The below function is asking specifically for the OTU IDs in the stem OTU table. These are the row names. I will use these to subset the taxonomy file.
+stem_otu_names <- rownames(trans_otu_stem)
+stem_taxonomy <- subset(taxonomy, rownames(taxonomy) %in% stem_otu_names)
+
+#Now I am subsetting the new taxonomy file to include only the taxonomy information stored in column 2. 
+stem_taxonomy_only <- stem_taxonomy[, 2]
+
+#Below I am using the separate function from tidyr to split the taxonomy strings into columns by semi-colon so that I can rename the OTUs to give them more meaning for downstream analyses.
+library(tidyr)
+
+#The SILVA database only provides classifications up to genus level, new columns are created only up to Genus level.
+taxonomy_labels<-c("kingdom","phylum","class","order","family","genus")
+
+#Below I create a new data frame with a column containing taxonomy information.
+stem_otu_taxonomy <- data.frame(taxonomy = stem_taxonomy_only, trans_otu_stem)
+
+#I then separate the taxonomy strings into new columns labeled with the taxonomy labels saved in the taxonomy_labels object. Strings are being separated based on the presence of semi-colons.
+stem_otu_taxonomy <- separate(stem_otu_taxonomy, col = taxonomy, into = taxonomy_labels, sep = ';')
+
+#Below I create a data frame that consists of phylum assignment and the rarefied OTU table.
+stem_otu_phylum <- data.frame(phylum = stem_otu_taxonomy$phylum, trans_otu_stem)
+
+#I then remove the assignment confidence values contained in parentheses found in each taxonomic string using the sub function.
+stem_otu_phylum$phylum <- sub("\\(.*)","",x = stem_otu_phylum$phylum)
+
+#The following code is for the generation of phylum relative abundance stacked bar charts. I first sum each OTU by the phylum it belongs to. 
+library(plyr)
+stem_summed_otu_phylum <- as.data.frame(ddply(stem_otu_phylum, .(phylum), colwise(sum)))
+rownames(stem_summed_otu_phylum) <- make.names(stem_summed_otu_phylum$phylum)
+stem_summed_otu_phylum <- stem_summed_otu_phylum[, 2:39]
+
+#I then transpose the data frame so that sample names are now row names and column names are OTU names.
+trans_stem_otu_summed_phylum <- as.data.frame(t(stem_summed_otu_phylum))
+rownames(trans_stem_otu_summed_phylum) <- sub('X', '', x = rownames(trans_stem_otu_summed_phylum))
+
+#Create metadata
+stem_metadata_for_rel_abund <- read_excel("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/metadata/16s_metadata_without_plot.xlsx", sheet = 4)
+trans_stem_phylum_metadata <- merge(stem_metadata_for_rel_abund, trans_stem_otu_summed_phylum, by.x = 1, by.y = 0)
+
+#Then we can delete the sample name column as we don't need that.
+trans_stem_phylum_metadata <- trans_stem_phylum_metadata[, 2:20]
+
+#I then sum each OTU by Treatment column and subset to exclude sample names. This is because the following functions only work on matrices containing numeric data.
+stem_phylum_summed_treatment <- as.data.frame(ddply(trans_stem_phylum_metadata, .(Treatment), colwise(sum)))
+stem_phylum <- stem_phylum_summed_treatment[, 2:19]
+
+#I am now creating an other category. Other includes those OTUs belonging to a phylum that comprises less than 1% of the total community. This new object is reffered to as phylum_others.
+stem_phylum_others <- stem_phylum[, colSums(stem_phylum)/sum(stem_phylum) <= 0.1]
+stem_phylum_others_sum <- rowSums(stem_phylum_others)
+
+#I then create an object that contains all of the phyla that comprise more than 1% of the total community.
+stem_phylum_regular <- stem_phylum[, colSums(stem_phylum)/sum(stem_phylum) > 0.1]
+
+#I then create a dataframe containing the treatment information, the Other column and the remaining phyla
+stem_phylum_reg_others <- data.frame(Treatment = stem_phylum_summed_treatment$Treatment, stem_phylum_regular, Others = stem_phylum_others_sum)
+
+#These values are then converted to relative abundance using the decostand function from vegan. 
+library(vegan)
+stem_phylum_rel_abund <- decostand(stem_phylum_reg_others[, 2:4], method = 'total')
+stem_phylum_rel_abund <- data.frame(Treatment = stem_phylum_reg_others$Treatment, stem_phylum_rel_abund)
+
+#Below I use the melt function from the data.table package to reformat the data into stacked bar graph format. 
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(RColorBrewer)
+stem_phylum_melt <- melt(stem_phylum_rel_abund, id.vars = 'Treatment', variable.name = 'Phylum')
+stem_colors_n_phylum <- length(unique(stem_phylum_melt[, 'Phylum']))
+stem_phylum_melt$Treatment <- as.character(stem_phylum_melt$Treatment)
+stem_phylum_melt$Treatment <- factor(stem_phylum_melt$Treatment, levels = c("Control 2018", "Control 2019", "Pre-burned 2018", "Post-burned 2019"))
+
+tiff("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/stem_16s/Results/16s_stem_relative_abundance_phylum.tiff", units = 'in', width = 7, height = 7, res = 200)
+stem_rel_abund_phylum <- ggplot(stem_phylum_melt, aes(x = Treatment, y = value, fill = Phylum))+
+  geom_bar(stat = 'identity', show.legend = TRUE, color = 'black')+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(stem_colors_n_phylum))+
+  xlab('Stem')+
+  ylab('Relative Abundance')+
+  ggtitle('Stem - Phylum level')+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(), 
+        axis.text.y = element_text(size = 14), 
+        axis.line.y.left = element_line(), 
+        axis.title.y = element_blank(), 
+        legend.title = element_text(face = "bold", size = 14),
+        legend.text = element_text(size = 14))
+stem_rel_abund_phylum
+dev.off()
+
+stem_phylum_percent <- stem_phylum_rel_abund * 100 
+stem_phylum_percent <- stem_phylum_percent[, -1]
+stem_phylum_percent <- data.frame(Treatment = stem_phylum_rel_abund$Treatment, stem_phylum_percent)
+is.num <- sapply(stem_phylum_percent, is.numeric)
+stem_phylum_percent[is.num] <- lapply(stem_phylum_percent[is.num], round, 2)
+stem_proteobac_mean <- mean(stem_phylum_percent$Proteobacteria)
+stem_proteobac_mean
+```
+
+# The following chunk creates a relative abundance chart at the class level.
+
+```{r Relative abundance chart - Class}
+library(plyr)
+stem_otu_class <- data.frame(class = stem_otu_taxonomy$class, trans_otu_stem)
+
+#I then remove the assignment confidence values contained in parentheses found in each taxonomic string using the sub function.
+stem_otu_class$class <- sub("\\(.*)", '', x = stem_otu_class$class)
+stem_summed_class <- as.data.frame(ddply(stem_otu_class, .(class), colwise(sum)))
+rownames(stem_summed_class) <- make.names(stem_summed_class$class)
+stem_summed_class <- stem_summed_class[, 2:39]
+
+#I then transpose the dataframe and merge the metadata information
+trans_stem_class <- as.data.frame(t(stem_summed_class))
+rownames(trans_stem_class) <- sub('X', '', x = rownames(trans_stem_class))
+stem_class_metadata <- merge(stem_metadata_for_rel_abund, trans_stem_class, by.x = 1, by.y = 0)
+
+#Then we can delete the column with the sample names as they are not needed and then sum by treatment
+stem_class_metadata <- stem_class_metadata[, 2:37]
+stem_class_summed_treamtent <- as.data.frame(ddply(stem_class_metadata, .(Treatment), colwise(sum)))
+
+#I then subset the data so that only numerical data is present and creating a new class of objects, other, that includes OTUs from classes that represent 1% or less of the total community.
+stem_class <- stem_class_summed_treamtent[, 2:36]
+stem_class_others <- stem_class[, colSums(stem_class)/sum(stem_class) <= 0.01]
+stem_class_others_sum <- rowSums(stem_class_others)
+stem_class_regular <- stem_class[, colSums(stem_class)/sum(stem_class) > 0.01]
+
+#I then create a new dataframe that contains all of the class data and determine relative abundace using decostand function from vegan
+stem_class_reg_others <- data.frame(Treatment = stem_class_summed_treamtent$Treatment, stem_class_regular, Others = stem_class_others_sum)
+stem_class_rel_abund <- decostand(stem_class_reg_others[, 2:7], method = 'total')
+stem_class_rel_abund <- data.frame(Treatment = stem_class_reg_others$Treatment, stem_class_rel_abund)
+
+#Below I use the melt function from the data.table package to reformat the data into stacked bar graph format.
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(RColorBrewer)
+stem_class_melt <- melt(stem_class_rel_abund, id.vars = 'Treatment', variable.name = 'Class')
+stem_class_n_color <- length(unique(stem_class_melt$Class))
+stem_class_melt$Treatment <- as.character(stem_class_melt$Treatment)
+stem_class_melt$Treatment <- factor(stem_class_melt$Treatment, levels = c("Control 2018", "Control 2019", "Pre-burned 2018", "Post-burned 2019"))
+
+tiff("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/stem_16s/Results/16s_stem_relative_abundance_class.tiff", units = 'in', width = 7, height = 7, res = 200)
+stem_rel_abund_class <- ggplot(stem_class_melt, aes(x = Treatment, y = value, fill = Class))+
+  geom_bar(stat = 'identity', show.legend = TRUE, color = 'black')+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(stem_class_n_color))+
+  xlab('Stem')+
+  ylab('Relative Abundance')+
+  ggtitle('Stem - Class level')+
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.text.y = element_text(size = 12), 
+        axis.line.y.left = element_line(), 
+        axis.title.y = element_blank())
+dev.off()
+
+#Let's join the relative abundance charts at phylum and class level
+tiff(filename = "/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/Stem_16s/Results/16s_stem_rel_abund_phylum_class.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggarrange(stem_rel_abund_phylum, stem_rel_abund_class,  nrow = 1, labels = c("I", "II"), align = 'h')
+dev.off()
+
+stem_class_percent <- stem_class_rel_abund * 100 
+stem_class_percent <- stem_class_percent[, -1]
+stem_class_percent <- data.frame(Treatment = stem_class_rel_abund$Treatment, stem_class_percent)
+is.num <- sapply(stem_class_percent, is.numeric)
+stem_class_percent[is.num] <- lapply(stem_class_percent[is.num], round, 2)
+stem_alphaproteobac_mean <- mean(stem_class_percent$Alphaproteobacteria)
+stem_alphaproteobac_mean
+```
+
+# The purpose of the following chunk is to create Shannon Alpha diversity boxplots across treatments
+
+```{r Alpha Diversity}
+#The following function from vegan will give us the shannon diversity index
+stem_alpha_diversity <- diversity(rare_otu_stem, index = 'shannon')
+stem_alpha_diversity <- as.data.frame(stem_alpha_diversity)
+
+#Adding in the metadata for graph
+stem_alpha_metadata <- merge(stem_metadata_for_rel_abund, stem_alpha_diversity, by.x = 1, by.y = 0)
+rownames(stem_alpha_metadata) <- make.names(stem_alpha_metadata$Sample)
+stem_alpha_metadata <- stem_alpha_metadata[, 2:3]
+rownames(stem_alpha_metadata) <- sub('X', '', rownames(stem_alpha_metadata))
+stem_alpha_metadata$Treatment <- as.character(stem_alpha_metadata$Treatment)
+stem_alpha_metadata$Treatment <- factor(stem_alpha_metadata$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+#Let's make the graph now
+tiff("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/stem_16s/Results/16s_stem_alpha_shannon_index.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggplot(stem_alpha_metadata, aes(x = Treatment, y = stem_alpha_diversity, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Stem 16S Alpha Diversity')+
+  ylab('Shannon Diversity Index')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Let's make the graph now without legend
+tiff("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/stem_16s/Results/16s_stem_alpha_shannon_index_without_legend.tiff", units = 'in', width = 10, height = 7, res = 200)
+stem_alpha_without_legend <- ggplot(stem_alpha_metadata, aes(x = Treatment, y = stem_alpha_diversity, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Stem 16S Alpha Diversity')+
+  ylab('Shannon Diversity Index')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  theme(legend.position = 'none')+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+```
+
+# The following code is used to generate the Principal Coordinate Analysis chart
+
+```{r Principal Coordinate Analyses}
+#We will start with the object named 'rare_otu_stem_no_singletons'
+library(vegan)
+rare_stem_rel_abund_for_pcoa <- decostand(rare_otu_stem_no_singletons, method = 'total')
+
+#Need to load the library 'ape' and use the vegdist function to create a dissimilarity matrix using the Bray Curtis distance
+library(ape)
+stem_dist <- vegdist(rare_stem_rel_abund_for_pcoa, method = 'bray')
+stem_pcoa <- pcoa(stem_dist)
+stem_pcoa_vectors <- as.data.frame(stem_pcoa$vectors)
+stem_pcoa_vectors_metadata <- merge(stem_metadata_for_rel_abund, stem_pcoa_vectors, by.x = 1, by.y = 0)
+biplot(stem_pcoa, plot.axes = c(1, 2))
+stem_pcoa_scores <- data.frame(PC1 = stem_pcoa_vectors$Axis.1, PC2 = stem_pcoa_vectors$Axis.2)
+stem_pcoa_ellipse <- ordiellipse(stem_pcoa_scores, stem_pcoa_vectors_metadata$Treatment)
+
+#Plot the eigenvalues and interpret
+barplot(stem_pcoa$values$Relative_eig[1:10])
+
+# Find out the percentage variance explained by the first two principal axes
+stem_pcoa$values$Relative_eig[1] * 100 #35.58
+stem_pcoa$values$Relative_eig[2] * 100 #12.49
+
+#Extract the plot scores from first two PCoA axes
+stem_pcoa_axes <- stem_pcoa$vectors[, c(1, 2)]
+
+#In order to change the color scheme of PCoA we will have to add one more column to the dataframe 'stem_pcoa_vectors_metadata'
+stem_treatment_pcoa_color <- c('Burn_B', 'Burn_B','Burn_B','Burn_B','Burn_B', 'Burn_C', 'Burn_C','Burn_C','Burn_C','Burn_C', 'Control_D', 'Control_D','Control_D','Control_D','Control_D', 'Control_A', 'Control_A','Control_A','Control_A','Control_A', 'Burn_B','Burn_B','Burn_B', 'Burn_C', 'Burn_C','Burn_C','Burn_C','Burn_C', 'Control_D', 'Control_D','Control_D','Control_D','Control_D', 'Control_A', 'Control_A','Control_A','Control_A','Control_A')
+stem_pcoa_vectors_metadata <- data.frame(Treatment_color = stem_treatment_pcoa_color, stem_pcoa_vectors_metadata)
+
+tiff("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/stem_16s/Results/16s_stem_PCOA.tiff", units = 'in', width = 10, height = 7, res = 200)
+stem_pcoa_16s <- ggplot(stem_pcoa_scores, aes(PC1, PC2, color = stem_pcoa_vectors_metadata$Treatment_color))+
+  geom_point(size = 2, aes(shape = year_permanova_stem))+
+  labs(shape = 'Year')+
+  ggtitle('Stem 16S')+
+  xlab('Principal Axis 1 (35.58%)')+
+  xlim(c(-0.6, 0.6))+
+  ylab('Principal Axis 2 (12.49%)')+
+  theme_linedraw()+
+  #scale_color_discrete(name = 'Niches')+
+  theme(plot.title = element_text(family = 'Arial', size=14, face="bold"))+
+  theme(axis.title.x=element_text(family = 'Arial', size=10))+
+  theme(axis.title.y=element_text(family = 'Arial', size=10))+
+  theme(axis.text.x=element_text(family = 'Arial', size=10))+
+  theme(axis.text.y=element_text(family = 'Arial', size=10))+
+  theme(legend.title = element_text(family = 'Arial', face = 'bold', size = 14))+
+  theme(legend.text = element_text(size = 14, family = 'Arial'))+
+  scale_color_brewer(palette = 'Set1', name = 'Treatment')
+dev.off()
+```
+
+# The purpose of this code is to do PERMANOVA on the WHOLE data
+
+```{r}
+# PERMANOVA without plot information
+treatment_stem_whole <- c("Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control","Control","Control","Control","Control","Control","Control","Control","Control","Control","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control","Control","Control","Control","Control","Control","Control","Control","Control","Control")
+
+year_permanova_stem <- c("2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019")
+
+stem_permanova_whole <- adonis(rare_stem_rel_abund_for_pcoa~treatment_stem_whole + year_permanova_stem + treatment_stem_whole * year_permanova_stem, method = 'bray', permutations = 10000)
+stem_permanova_whole
+
+stem_plot <- c("B","B","B","B","B","C","C","C","C","C","D","D","D","D","D","A","A","A","A","A","B","B","B","C","C","C","C","C","D","D","D","D","D","A","A","A","A","A")
+
+#PERMANOVA with plot information
+stem_permanova_whole_plot <- adonis(rare_stem_rel_abund_for_pcoa ~ treatment_stem_whole +  year_permanova_stem + stem_plot + treatment_stem_whole * year_permanova_stem * stem_plot, method = 'bray', permutations = 10000)
+stem_permanova_whole_plot
+```
+
+#The purpose of this code chunk is to find differences in shannon alpha diversity across treatments.
+
+```{r Differences in shannon index}
+#We have to generate a new object for plot information. We will have to remove 4 samples from stem niche, 2 from 2018 data and 2 from 2019
+plot_tree_stem <- c("B_1", "B_2","B_3","B_4","B_5", "C_1", "C_2","C_3","C_4","C_5", "D_1", "D_2", "D_3", "D_4", "D_5", "A_1", "A_2","A_3","A_4","A_5","B_3","B_4","B_5", "C_1", "C_2","C_3","C_4","C_5", "D_1", "D_2", "D_3", "D_4", "D_5", "A_1", "A_2","A_3","A_4","A_5")
+
+#We will start with object 'stem_alpha_diversity_treatment' and add one more column to it and that is plot information
+stem_plot_shannon <- data.frame(Plot = plot_tree_stem, Year = year_permanova_stem, Treatment = treatment_stem_whole,  stem_alpha_metadata)
+
+#Delete the 'Treatment.1' column
+stem_plot_shannon <- stem_plot_shannon[, -4]
+colnames(stem_plot_shannon)[4] <- "Shannon_index"
+
+#To balance the data we will have to remove the samples 18CF1514 and 18CF1524
+stem_plot_shannon <- stem_plot_shannon[!row.names(stem_plot_shannon) %in% c("18CF1514", "18CF1524"), ]
+
+#Install required packages if they are not already installed
+if(!require(psych)){install.packages("psych")}
+if(!require(nlme)){install.packages("nlme")}
+if(!require(car)){install.packages("car")}
+if(!require(multcompView)){install.packages("multcompView")}
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(ggplot2)){install.packages("ggplot2")}
+if(!require(rcompanion)){install.packages("rcompanion")}
+
+#Order factors by order in dataframe, otherwise, R will alphabetize them
+stem_plot_shannon$Treatment <- factor(stem_plot_shannon$Treatment, levels = unique(stem_plot_shannon$Treatment))
+
+#Convert the Year column to numeric
+stem_plot_shannon$Year <- as.numeric(stem_plot_shannon$Year)
+
+#Code for the analysis
+library(nlme)
+stem_model_alpha_diversity <- lme(Shannon_index ~ Treatment + Year + Treatment*Year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = stem_plot_shannon, method = "REML")
+library(car)
+Anova(stem_model_alpha_diversity)
+
+#Code for the post hoc analysis
+stem_plot_shannon$treatment_year <- interaction(stem_plot_shannon$Treatment, stem_plot_shannon$Year)
+stem_alpha_model <- lme(Shannon_index ~ treatment_year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = stem_plot_shannon, method = "REML")
+
+#Let's perform the tukey test on stem alpha diversity
+library(lsmeans)
+stem_alpha_post_hoc <- lsmeans(stem_alpha_model, ~treatment_year, adjust = "tukey")
+cld(stem_alpha_post_hoc, alpha = 0.05, Letters = letters, adjust = "tukey")
+```
+
+#The purpose of this code is find the differences in observed richness across treatments.
+
+```{r Differences in Richness}
+# RICHNESS
+library(vegan)
+stem_richness <- specnumber(rare_otu_stem)
+stem_richness_metadata <- data.frame(Plot = plot_tree_stem, Year = year_permanova_stem, Treatment = treatment_stem_whole, Richness = stem_richness)
+
+#Deleting the rows to maintain the balance in the model
+stem_richness_metadata <- stem_richness_metadata[!row.names(stem_richness_metadata) %in% c("18CF1514", "18CF1524"), ]
+
+#Order factors by order in dataframe, otherwise, R will alphabetize them
+stem_richness_metadata$Treatment <- factor(stem_richness_metadata$Treatment, levels = unique(stem_richness_metadata$Treatment))
+
+#Make the Year column numeric
+stem_richness_metadata$Year <- as.numeric(stem_richness_metadata$Year)
+
+#Code for the analysis
+library(nlme)
+stem_model_richness <- lme(Richness ~ Treatment + Year + Treatment*Year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = stem_richness_metadata, method = "REML")
+library(car)
+Anova(stem_model_richness)
+
+#Code for the post hoc analysis
+stem_richness_metadata$treatment_year <- interaction(stem_richness_metadata$Treatment, stem_richness_metadata$Year)
+stem_richness_model_tukey <- lme(Richness ~ treatment_year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = stem_richness_metadata, method = "REML")
+
+#Let's perform the tukey test on stem alpha diversity
+library(lsmeans)
+stem_richness_post_hoc <- lsmeans(stem_richness_model_tukey, ~treatment_year, adjust = "tukey")
+cld(stem_richness_post_hoc, alpha = 0.05, Letters = letters, adjust = "tukey")
+
+#One thing that we forgot is to make charts for the richness. We will do that now. Let's create the data frame required.
+stem_richness_df <- data.frame(stem_alpha_metadata, Richness = stem_richness)
+stem_richness_df <- stem_richness_df[, -2]
+stem_richness_df$Treatment <- as.character(stem_richness_df$Treatment)
+stem_richness_df$Treatment <- factor(stem_richness_df$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+# This is the graph with legend
+tiff("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/stem_16s/Results/16s_stem_richness.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggplot(stem_richness_df, aes(x = Treatment, y = Richness, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Stem 16S Richness')+
+  ylab('OTU Richness')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Let's make the graph without legend
+tiff("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/stem_16s/Results/16s_stem_richness_without_legend.tiff", units = 'in', width = 8, height = 7, res = 200)
+stem_richness_chart_without_legend <- ggplot(stem_richness_df, aes(x = Treatment, y = Richness, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Stem 16S Richness')+
+  ylab('OTU Richness')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  theme(legend.position = 'none')+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Now let's combine the alpha diversity and richness chart using ggarrange
+tiff("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/stem_16s/Results/16s_stem_richness_and_shannon.tiff", units = 'in', height = 10, width = 8, res = 300)
+ggarrange(stem_richness_chart_without_legend + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()), stem_alpha_without_legend,  ncol = 1, labels = c("I", "II"), align = 'v', hjust = -3)
+dev.off()
+```
+
+```{r Concise box plots}
+#The purpose of this code chunk is to make the shannon diversity box plots in the concise form. We will start working with dataframe stem_alpha_diversity
+stem_16s_alpha_diversity <- stem_alpha_diversity
+colnames(stem_16s_alpha_diversity)[1] <- 'values'
+
+#Note that the metadata that we wanna use now has already been created for pcoa plot so will use that metadata.
+stem_treatment_pcoa_color
+year_permanova_stem
+stem_16s_alpha_concise <- data.frame(stem_16s_alpha_diversity, Treatment = stem_treatment_pcoa_color, Year = year_permanova_stem)
+stem_16s_alpha_concise$Treatment <- as.character(stem_16s_alpha_concise$Treatment)
+stem_16s_alpha_concise$Treatment <- factor(stem_16s_alpha_concise$Treatment, levels = c('Control_A', 'Control_D', 'Burn_B', 'Burn_C'))
+
+stem_16s_alpha <- ggplot(data = stem_16s_alpha_concise, aes(x = Treatment, y = values)) + geom_boxplot(aes(fill = Year)) +
+  ggtitle('Stem 16S')+
+  xlab('Treatment')+
+  ylab('Shannon Diversity Index')+
+  theme_linedraw()+
+  theme(axis.title.x=element_blank())+
+  theme(axis.title.y=element_blank())+
+  theme(axis.text.x=element_text(family = 'Arial', size=12))+
+  theme(axis.text.y=element_text(family = 'Arial', size=12))+
+  theme(legend.title = element_text(family = 'Arial', face = 'bold', size = 12))+
+  theme(legend.text = element_text(size = 14, family = 'Arial'))+
+  scale_color_brewer(palette = 'Set1', name = 'Treatment')
+
+#We have to do the same for the richness graph. We will use stem_richness_df dataframe
+stem_16s_richness <- stem_richness_df
+
+#We wanna delete the existing Treatment column
+stem_16s_richness <- subset(stem_16s_richness, select = -Treatment)
+
+#Add the same metadata previously added
+stem_16s_richness <- data.frame(stem_16s_richness, Treatment = stem_treatment_pcoa_color, Year = year_permanova_stem)
+stem_16s_richness$Treatment <- as.character(stem_16s_richness$Treatment)
+stem_16s_richness$Treatment <- factor(stem_16s_richness$Treatment, levels = c('Control_A', 'Control_D', 'Burn_B', 'Burn_C'))
+
+stem_16s_richness_graph <- ggplot(data = stem_16s_richness, aes(x = Treatment, y = Richness)) + geom_boxplot(aes(fill = Year)) +
+  #ggtitle('Stem 16S')+
+  xlab('Treatment')+
+  ylab('OTU Richness')+
+  theme_linedraw()+
+  theme(axis.title.x=element_blank())+
+  theme(axis.title.y=element_blank())+
+  scale_y_continuous(position = "right")+
+  theme(axis.text.x=element_text(family = 'Arial', size=12))+
+  theme(axis.text.y=element_text(family = 'Arial', size=12))+
+  theme(legend.title = element_text(family = 'Arial', face = 'bold', size = 12))+
+  theme(legend.text = element_text(size = 14, family = 'Arial'))+
+  scale_color_brewer(palette = 'Set1', name = 'Treatment')
+```
+
+```{r Anova test on 2018 data}
+# We will start with subsetting the stem_alpha_diversity_treatment dataframe
+stem_alpha_2018 <- as.data.frame(stem_alpha_diversity[1:20, ])
+colnames(stem_alpha_2018)[1] <- 'alpha_diversity'
+
+plot_stem_anova <- c("B", "B","B","B","B","C","C","C","C","C","D","D","D","D","D","A","A","A","A","A")
+stem_alpha_2018 <- data.frame(Plot = plot_stem_anova, stem_alpha_2018)
+
+stem_alpha_2018_anova <- aov(alpha_diversity ~ Plot, data = stem_alpha_2018)
+summary(stem_alpha_2018_anova)
+```
+
+#The purpose of this code chunk is to prepare alpha diversity and richness boxplots without plot information
+
+```{r Box plots without plot}
+#The purpose of this code chunk is to make the shannon diversity box plots in the concise form. We will start working with dataframe stem_alpha_diversity
+stem_16s_alpha_diversity <- stem_alpha_diversity
+colnames(stem_16s_alpha_diversity)[1] <- 'values'
+
+#Create metadata
+stem_treatment <- c("Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control", "Control","Control","Control","Control","Control","Control","Control","Control","Control","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control", "Control","Control","Control","Control","Control","Control","Control","Control","Control")
+year_permanova_stem
+stem_16s_alpha_without_plot <- data.frame(stem_16s_alpha_diversity, Treatment = stem_treatment, Year = year_permanova_stem)
+stem_16s_alpha_without_plot$Treatment <- as.character(stem_16s_alpha_without_plot$Treatment)
+stem_16s_alpha_without_plot$Treatment <- factor(stem_16s_alpha_without_plot$Treatment, levels = c("Control", "Burned"))
+
+stem_16s_alpha_graph_without_plot <- ggplot(data = stem_16s_alpha_without_plot, aes(x = Treatment, y = values)) + geom_boxplot(aes(fill = Year), outlier.shape = NA) +
+  ggtitle('Stem 16S')+
+  xlab('Treatment')+
+  ylab('Shannon Diversity Index')+
+  geom_text(data=NULL,aes(x=0.82, y=4.6, label="AB"))+
+  geom_text(data=NULL,aes(x=1.18, y=4.85, label="BC"))+ 
+  geom_text(data=NULL,aes(x=1.82, y=4.3, label="A"))+ 
+  geom_text(data=NULL,aes(x=2.18, y=4.95, label="C"))+
+  theme_linedraw()+
+  theme(axis.title.x=element_blank())+
+  theme(axis.title.y=element_blank())+
+  theme(axis.text.x=element_text(family = 'Arial', size=12))+
+  theme(axis.text.y=element_text(family = 'Arial', size=12))+
+  theme(legend.title = element_text(family = 'Arial', face = 'bold', size = 12))+
+  theme(legend.text = element_text(size = 14, family = 'Arial'))+
+  scale_color_brewer(palette = 'Set1', name = 'Treatment')
+
+stem_16s_alpha_graph_without_plot
+
+#We have to do the same for the richness graph. We will use stem_richness_df dataframe
+stem_16s_richness <- stem_richness_df
+
+#We wanna delete the existing Treatment column
+stem_16s_richness <- subset(stem_16s_richness, select = -Treatment)
+
+#Add the same metadata previously added
+stem_16s_richness_without_plot <- data.frame(stem_16s_richness, Treatment = stem_treatment, Year = year_permanova_stem)
+stem_16s_richness_without_plot$Treatment <- as.character(stem_16s_richness_without_plot$Treatment)
+stem_16s_richness_without_plot$Treatment <- factor(stem_16s_richness_without_plot$Treatment, levels = c("Control", "Burned"))
+
+stem_16s_richness_graph_without_plot <- ggplot(data = stem_16s_richness_without_plot, aes(x = Treatment, y = Richness)) + geom_boxplot(aes(fill = Year), outlier.shape = NA) +
+  #ggtitle('stem 16S')+
+  xlab('Treatment')+
+  ylab('OTU Richness')+
+  geom_text(data=NULL,aes(x=0.81, y=375, label="A"))+
+  geom_text(data=NULL,aes(x=1.19, y=480, label="B"))+ 
+  geom_text(data=NULL,aes(x=1.81, y=275, label="A"))+ 
+  geom_text(data=NULL,aes(x=2.19, y=450, label="B"))+
+  theme_linedraw()+
+  theme(axis.title.x=element_blank())+
+  theme(axis.title.y=element_blank())+
+  scale_y_continuous(position = "right")+
+  theme(axis.text.x=element_text(family = 'Arial', size=12))+
+  theme(axis.text.y=element_text(family = 'Arial', size=12))+
+  theme(legend.title = element_text(family = 'Arial', face = 'bold', size = 12))+
+  theme(legend.text = element_text(size = 14, family = 'Arial'))+
+  scale_color_brewer(palette = 'Set1', name = 'Treatment')
+
+stem_16s_richness_graph_without_plot
+```
+
+#The purpose of this chunk is to perform the indicator species analysis on stem data
+
+```{r Indicator Species Analysis}
+treatment_stem_indicator <- c("Burned 2018","Burned 2018","Burned 2018","Burned 2018","Burned 2018","Burned 2018","Burned 2018","Burned 2018","Burned 2018","Burned 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Burned 2019","Burned 2019","Burned 2019","Burned 2019","Burned 2019","Burned 2019","Burned 2019","Burned 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019")
+
+#We are pretty much ready to run the analysis on bark data
+stem_indval <- multipatt(rare_otu_stem_no_singletons, treatment_stem_indicator, duleg = TRUE, func = "IndVal.g", control = how(nperm = 10000))
+sink(file = "/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/Stem_16s/Tables_from_R/stem_16s_indicator_species.txt")
+summary(stem_indval, indvalcomp = TRUE)
+sink()
+
+library(readxl)
+stem_indicators <- read_excel("/Users/beantkapoor/OneDrive - University of Tennessee/Dogwood Microbiome Project/Data Analysis/16s_all/Stem_16s/Tables_from_R/stem_16s_indicators.xlsx", col_names = TRUE)
+stem_indicators <- as.data.frame(stem_indicators)
+rownames(stem_indicators) <- stem_indicators[, 2]
+stem_indicators_test <- stem_indicators[, -2]
+
+#Subset the dataframes based on treatment
+stem_indic_control_2018 <- subset(stem_indicators_test, stem_indicators_test$Treatment == 'Control 2018')
+stem_indic_control_2019 <- subset(stem_indicators_test, stem_indicators_test$Treatment == 'Control 2019')
+stem_indic_burned_2018 <- subset(stem_indicators_test, stem_indicators_test$Treatment == 'Burned 2018')
+stem_indic_burned_2019 <- subset(stem_indicators_test, stem_indicators_test$Treatment == 'Burned 2019')
+
+#Keep first ten rows
+stem_indic_control_2018_imp <- stem_indic_control_2018[1:10, ]
+stem_indic_control_2019_imp <- stem_indic_control_2019[1:10, ]
+stem_indic_burned_2018_imp <- stem_indic_burned_2018[1:10, ]
+stem_indic_burned_2019_imp <- stem_indic_burned_2019[1:10, ]
+
+stem_indic_imp <- rbind(stem_indic_control_2018_imp, stem_indic_control_2019_imp, stem_indic_burned_2018_imp, stem_indic_burned_2019_imp)
+
+#Create one more dataframe only with OTU and treatment info
+stem_indic_treatment <- as.data.frame(stem_indic_imp[, 1])
+colnames(stem_indic_treatment) <- "Treatment"
+rownames(stem_indic_treatment) <- rownames(stem_indic_imp)
+
+stem_indic_treatment$Treatment <- factor(stem_indic_treatment$Treatment, levels = c("Control 2018", "Control 2019", "Burned 2018", "Burned 2019"))
+
+library(RColorBrewer)
+stem_ind_heatmap <- pheatmap(stem_indic_imp[, 2:4], 
+                              treeheight_row = 0, 
+                              treeheight_col = 0,
+                              annotation_row = stem_indic_treatment,
+                              color = colorRampPalette(brewer.pal(8, "Blues"))(100),
+                              cluster_rows = F,
+                             gaps_row = c(10, 20, 30))
+stem_ind_heatmap
+
+#To find out the identity of the indicator species we have to merge indicator species dataframe to stem taxonomy dataframe
+library(tidyr)
+stem_indic_taxonomy <- merge(stem_indic_imp, stem_otu_taxonomy, by = 0)
+
+#Subset by treatment so that we get OTUs which belong to "Burned 2019"
+stem_indic_tax_burned_2019 <- stem_indic_taxonomy[stem_indic_taxonomy$Treatment == "Burned 2019", ]
+stem_indic_tax_burned_2019 <- stem_indic_tax_burned_2019[order( - stem_indic_tax_burned_2019$Indicator_value), ]
+```
+
+# This is hopefully the last way I am making my boxplots from richness and alpha diversity. Let's start from a fresh dataset
+
+```{r}
+# Use stem_16s_alpha_without_plot and make a new dataframe out of it
+alpha_stem <- stem_16s_alpha_without_plot
+
+# Prepare a new vector
+alpha_stem_treatment <- c("Pre-burned 2018","Pre-burned 2018","Pre-burned 2018","Pre-burned 2018","Pre-burned 2018","Pre-burned 2018","Pre-burned 2018","Pre-burned 2018","Pre-burned 2018","Pre-burned 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Control 2018","Post-burned 2019","Post-burned 2019","Post-burned 2019","Post-burned 2019","Post-burned 2019","Post-burned 2019","Post-burned 2019","Post-burned 2019", "Control 2019", "Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019","Control 2019")
+
+#Add the above vector to alpha_stem
+alpha_stem <- data.frame(alpha_treatment = alpha_stem_treatment, alpha_stem)
+
+#Delete Treatment and year column
+alpha_stem_clean <- alpha_stem[, -c(3, 4)]
+
+#Change the column name alpha_treatment to simply Treatment
+colnames(alpha_stem_clean)[1] <- "Treatment"
+
+#Convert the variable Treatment to factor variable
+alpha_stem_clean$Treatment <- factor(alpha_stem_clean$Treatment, levels = c("Control 2018", "Control 2019", "Pre-burned 2018", "Post-burned 2019"))
+
+#Let's make the boxplot
+library(ggplot2)
+p_stem <- ggplot(alpha_stem_clean, aes(x = Treatment, y = values, fill = Treatment)) +
+  geom_boxplot(outlier.shape = NA)+
+  theme_linedraw()+
+  scale_fill_manual(values = alpha(c("lightgreen","springgreen4","bisque1","firebrick3"), 0.9))+
+  ggtitle('Stem 16S')+
+  #xlab('Treatment')+
+  #ylab('Shannon Diversity Index')+
+  theme(legend.title = element_text(face = "bold", size = 14),
+        legend.text = element_text(size = 14))+
+  theme(plot.title = element_text(face = "bold", size = 14))+
+  theme(axis.title.x=element_blank())+
+  theme(axis.title.y=element_blank())+
+  theme(axis.text.x=element_blank())
+
+p_stem
+
+#Have to do the same for richness. Let's start with the dataframe stem_16s_richness and add Treatment column
+stem_rich <- data.frame(stem_16s_richness, Treatment = alpha_stem_treatment)
+stem_rich$Treatment <- factor(stem_rich$Treatment, levels = c("Control 2018", "Control 2019", "Pre-burned 2018", "Post-burned 2019"))
+
+#Let's make the boxplot
+library(ggplot2)
+r_stem <- ggplot(stem_rich, aes(x = Treatment, y = Richness, fill = Treatment)) +
+  geom_boxplot(outlier.shape = NA)+
+  theme_linedraw()+
+  #ggtitle('stem 16S')+
+  #xlab('Treatment')+
+  #ylab('Shannon Diversity Index')+
+  scale_fill_manual(values = alpha(c("lightgreen","springgreen4","bisque1","firebrick3"), 0.9))+
+  theme(legend.title = element_text(face = "bold", size = 14),
+        legend.text = element_text(size = 14))+
+  theme(plot.title = element_text(face = "bold", size = 14))+
+  theme(axis.title.x=element_blank())+
+  theme(axis.title.y=element_blank())+
+  theme(axis.text.x=element_blank())+
+  scale_y_continuous(position = "right")
+
+r_stem
+```
+
+#T.test by treatment
+
+```{r}
+stem_alpha_diversity_treatment <- data.frame(stem_alpha_diversity, Treatment = treatment_stem_whole, Year = year_permanova_stem)
+stem_alpha_diversity_treatment$X <- rownames(stem_alpha_diversity_treatment)
+
+stem_alpha_diversity_treatment$X<-sub("18","",stem_alpha_diversity_treatment$X)
+
+stem_alpha_diversity_treatment$X<-sub("19","",stem_alpha_diversity_treatment$X)
+ 
+library(tidyr)
+stem_alpha_diversity_wide<-pivot_wider(stem_alpha_diversity_treatment, names_from = Year, values_from=stem_alpha_diversity)
+
+#Just took a quick look at the stem_alpha_diversity_wide dataframe. We will have to remove first two rows as they contain NA values
+stem_alpha_diversity_wide_clean <- stem_alpha_diversity_wide[c(3:20), ]
+ 
+stem_alpha_diversity_wide_clean$yeardiffs<-stem_alpha_diversity_wide_clean$`2019`- stem_alpha_diversity_wide_clean$`2018`
+hist(stem_alpha_diversity_wide_clean$yeardiffs)
+
+t.test.year.diffs_stem <-t.test(yeardiffs ~ Treatment,stem_alpha_diversity_wide_clean)
+t.test.year.diffs_stem
+
+#Richness
+stem_richness_treatment <- data.frame(stem_rich, Treatment = stem_alpha_diversity_treatment$Treatment, Year = year_permanova_stem)
+
+#Delete the treatment column
+stem_richness_treatment <- stem_richness_treatment[, -2]
+colnames(stem_richness_treatment)[2] <- "Treatment"
+
+stem_richness_treatment$Sample <- rownames(stem_richness_treatment)
+stem_richness_treatment$Sample <- sub("18", "", stem_richness_treatment$Sample)
+stem_richness_treatment$Sample <- sub("19", "", stem_richness_treatment$Sample)
+
+library(tidyr)
+stem_rich_wide <- pivot_wider(stem_richness_treatment, names_from = Year, values_from = Richness)
+stem_rich_wide <- stem_rich_wide[c(3:20), ]
+stem_rich_wide$yeardiffs <- stem_rich_wide$`2019` - stem_rich_wide$`2018`
+hist(stem_rich_wide$yeardiffs)
+
+t_test_stem_rich <- t.test(yeardiffs ~ Treatment, stem_rich_wide)
+t_test_stem_rich
+```
+
+
+#T-test by year
+
+```{r}
+library(tidyr)
+stem_alpha_t_year <- stem_alpha_diversity_treatment[, -2]
+stem_alpha_t_wide <- pivot_wider(stem_alpha_t_year, names_from = Year, values_from = stem_alpha_diversity)
+
+t_stem_alpha_year <- t.test(stem_alpha_t_wide$`2019`, stem_alpha_t_wide$`2018`, paired = TRUE, alternative = "two.sided")
+t_stem_alpha_year
+
+#Richness
+stem_richness_t <- stem_richness_treatment
+stem_richness_t <- stem_richness_t[, -2]
+stem_richness_wide <- pivot_wider(stem_richness_t, names_from = Year, values_from = Richness)
+
+stem_richness_t_year <- t.test(stem_richness_wide$`2019`, stem_richness_wide$`2018`, paired = TRUE, alternative = "two.sided")
+stem_richness_t_year
+```

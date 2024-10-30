@@ -1,0 +1,569 @@
+---
+title: "ITS_roots"
+author: "Beant Kapoor"
+date: "3/23/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+### General Comment - Objects in this file contain the name 'otu' however they represent ASV in this case.
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r Import Data and Subset}
+#So we will be working with two dataframes 'seqtab_nochim' which is our ASV count table and 'taxa' which is our taxonomy table. First of all we have to make sure that column names in seqtab_nochim dataframe align correctly with the rownames of taxa dataframe.
+dim(seqtab_nochim) #There are 218 rows (samples) and 13205 columns (ASVs)
+dim(taxa) #There are 13205 rows (ASVs) and 7 columns (Taxa levels)
+
+#Next I import the metadata for the particular habitat of interest. In this case I am working with roots. I will use this metadata to subset the larger OTU file above.
+roots_metadata <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_roots.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+sample_name_roots <- roots_metadata$Sample
+
+#Here I use the subset function to pull out just the samples belonging to roots.
+roots_asv <- subset(seqtab_nochim, rownames(seqtab_nochim) %in% sample_name_roots)
+
+#Let's check that the previous function worked okay. The resulting table should have 40 rows and 13205 columns
+dim(roots_asv) #BRAVO!
+
+#Let's clean the table further. Here we are removing any ASVs which are not present in any of the samples. What the below function is doing is summing the columns (ASVs) and any ASV that equals 0 is removed from the dataset. This will hopefully speed up downstream analyses.
+roots_pure <- roots_asv[, colSums(roots_asv) > 0]
+dim(roots_pure) #40 rows and 1375 ASVs
+```
+
+```{r Rarefaction}
+#Below I create the rarefaction curves for each sample using the rarecurve function from vegan.
+library(vegan)
+rare_curve_roots <- rarecurve(roots_pure)
+
+#I then create an object that spans the range of the ESV richness. This will be used to plot the vertical line in my ggplot rarefaction curve. 
+f_roots<-(0:12500)
+
+#I then create objects containing the x and y coordinates values for each stratum.
+sequences_roots40<-attr(rare_curve_roots[[40]],which="Subsample")
+sequences_roots39<-attr(rare_curve_roots[[39]],which="Subsample")
+sequences_roots38<-attr(rare_curve_roots[[38]],which="Subsample")
+sequences_roots37<-attr(rare_curve_roots[[37]],which="Subsample")
+sequences_roots36<-attr(rare_curve_roots[[36]],which="Subsample")
+sequences_roots35<-attr(rare_curve_roots[[35]],which="Subsample")
+sequences_roots34<-attr(rare_curve_roots[[34]],which="Subsample")
+sequences_roots33<-attr(rare_curve_roots[[33]],which="Subsample")
+sequences_roots32<-attr(rare_curve_roots[[32]],which="Subsample")
+sequences_roots31<-attr(rare_curve_roots[[31]],which="Subsample")
+sequences_roots30<-attr(rare_curve_roots[[30]],which="Subsample")
+sequences_roots29<-attr(rare_curve_roots[[29]],which="Subsample")
+sequences_roots28<-attr(rare_curve_roots[[28]],which="Subsample")
+sequences_roots27<-attr(rare_curve_roots[[27]],which="Subsample")
+sequences_roots26<-attr(rare_curve_roots[[26]],which="Subsample")
+sequences_roots25<-attr(rare_curve_roots[[25]],which="Subsample")
+sequences_roots24<-attr(rare_curve_roots[[24]],which="Subsample")
+sequences_roots23<-attr(rare_curve_roots[[23]],which="Subsample")
+sequences_roots22<-attr(rare_curve_roots[[22]],which="Subsample")
+sequences_roots21<-attr(rare_curve_roots[[21]],which="Subsample")
+sequences_roots20<-attr(rare_curve_roots[[20]],which="Subsample")
+sequences_roots19<-attr(rare_curve_roots[[19]],which="Subsample")
+sequences_roots18<-attr(rare_curve_roots[[18]],which="Subsample")
+sequences_roots17<-attr(rare_curve_roots[[17]],which="Subsample")
+sequences_roots16<-attr(rare_curve_roots[[16]],which="Subsample")
+sequences_roots15<-attr(rare_curve_roots[[15]],which="Subsample")
+sequences_roots14<-attr(rare_curve_roots[[14]],which="Subsample")
+sequences_roots13<-attr(rare_curve_roots[[13]],which="Subsample")
+sequences_roots12<-attr(rare_curve_roots[[12]],which="Subsample")
+sequences_roots11<-attr(rare_curve_roots[[11]],which="Subsample")
+sequences_roots10<-attr(rare_curve_roots[[10]],which="Subsample")
+sequences_roots9<-attr(rare_curve_roots[[9]],which="Subsample")
+sequences_roots8<-attr(rare_curve_roots[[8]],which="Subsample")
+sequences_roots7<-attr(rare_curve_roots[[7]],which="Subsample")
+sequences_roots6<-attr(rare_curve_roots[[6]],which="Subsample")
+sequences_roots5<-attr(rare_curve_roots[[5]],which="Subsample")
+sequences_roots4<-attr(rare_curve_roots[[4]],which="Subsample")
+sequences_roots3<-attr(rare_curve_roots[[3]],which="Subsample")
+sequences_roots2<-attr(rare_curve_roots[[2]],which="Subsample")
+sequences_roots1<-attr(rare_curve_roots[[1]],which="Subsample")
+
+#Here I plot the rarefaction curves. 
+
+library(ggplot2)
+library(ggpubr)
+
+rarefaction_chart_roots <- ggplot() +
+  geom_line(aes(x=sequences_roots40,y=rare_curve_roots[[40]]),size=1)+
+  geom_line(aes(x=sequences_roots39,y=rare_curve_roots[[39]]),size=1)+
+  geom_line(aes(x=sequences_roots38,y=rare_curve_roots[[38]]),size=1)+
+  geom_line(aes(x=sequences_roots37,y=rare_curve_roots[[37]]),size=1)+
+  geom_line(aes(x=sequences_roots36,y=rare_curve_roots[[36]]),size=1)+
+  geom_line(aes(x=sequences_roots35,y=rare_curve_roots[[35]]),size=1)+
+  geom_line(aes(x=sequences_roots34,y=rare_curve_roots[[34]]),size=1)+
+  geom_line(aes(x=sequences_roots33,y=rare_curve_roots[[33]]),size=1)+
+  geom_line(aes(x=sequences_roots32,y=rare_curve_roots[[32]]),size=1)+
+  geom_line(aes(x=sequences_roots31,y=rare_curve_roots[[31]]),size=1 )+
+  geom_line(aes(x=sequences_roots30,y=rare_curve_roots[[30]]),size=1)+
+  geom_line(aes(x=sequences_roots29,y=rare_curve_roots[[29]]),size=1)+
+  geom_line(aes(x=sequences_roots28,y=rare_curve_roots[[28]]),size=1)+
+  geom_line(aes(x=sequences_roots27,y=rare_curve_roots[[27]]),size=1)+
+  geom_line(aes(x=sequences_roots26,y=rare_curve_roots[[26]]),size=1)+
+  geom_line(aes(x=sequences_roots25,y=rare_curve_roots[[25]]),size=1)+
+  geom_line(aes(x=sequences_roots24,y=rare_curve_roots[[24]]),size=1)+
+  geom_line(aes(x=sequences_roots23,y=rare_curve_roots[[23]]),size=1)+
+  geom_line(aes(x=sequences_roots22,y=rare_curve_roots[[22]]),size=1)+
+  geom_line(aes(x=sequences_roots21,y=rare_curve_roots[[21]]),size=1)+
+  geom_line(aes(x=sequences_roots20,y=rare_curve_roots[[20]]),size=1)+
+  geom_line(aes(x=sequences_roots19,y=rare_curve_roots[[19]]),size=1)+
+  geom_line(aes(x=sequences_roots18,y=rare_curve_roots[[18]]),size=1)+
+  geom_line(aes(x=sequences_roots17,y=rare_curve_roots[[17]]),size=1)+
+  geom_line(aes(x=sequences_roots16,y=rare_curve_roots[[16]]),size=1)+
+  geom_line(aes(x=sequences_roots15,y=rare_curve_roots[[15]]),size=1)+
+  geom_line(aes(x=sequences_roots14,y=rare_curve_roots[[14]]),size=1)+
+  geom_line(aes(x=sequences_roots13,y=rare_curve_roots[[13]]),size=1)+
+  geom_line(aes(x=sequences_roots12,y=rare_curve_roots[[12]]),size=1)+
+  geom_line(aes(x=sequences_roots11,y=rare_curve_roots[[11]]),size=1)+
+  geom_line(aes(x=sequences_roots10,y=rare_curve_roots[[10]]),size=1)+
+  geom_line(aes(x=sequences_roots9,y=rare_curve_roots[[9]]),size=1)+
+  geom_line(aes(x=sequences_roots8,y=rare_curve_roots[[8]]),size=1)+
+  geom_line(aes(x=sequences_roots7,y=rare_curve_roots[[7]]),size=1)+
+  geom_line(aes(x=sequences_roots6,y=rare_curve_roots[[6]]),size=1)+
+  geom_line(aes(x=sequences_roots5,y=rare_curve_roots[[5]]),size=1)+
+  geom_line(aes(x=sequences_roots4,y=rare_curve_roots[[4]]),size=1)+
+  geom_line(aes(x=sequences_roots3,y=rare_curve_roots[[3]]),size=1)+
+  geom_line(aes(x=sequences_roots2,y=rare_curve_roots[[2]]),size=1)+
+  geom_line(aes(x=sequences_roots1,y=rare_curve_roots[[1]]),size=1)+
+  geom_path(aes(x=12672,y=f_roots), linetype=5)+
+  ylim(0, 200)+
+  xlim(0, 100000)+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+       panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))+
+  labs(title = 'Roots ITS')
+
+ggsave(filename = "roots_ITS_rarefaction.curve.png", path = "/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Results", rarefaction_chart_roots, dpi = 300, width = 5, height = 5, units = 'in')
+
+#Here we are rarefying the data using the rrarefy function from vegan. I first use the sort function to determine the lowest number of sequences in a sample.
+sort(rowSums(roots_pure)) #We will rrarefy it to 12672 and we are losing one sample right now - 18CF3962ITS
+
+#Then using the rrarefy function from vegan, I rarefy my samples. The rarefaction cutoff or "sample" value is determined by evaluating my rarefaction curves and choosing the number of sequences that minimizes sample loss but maximizes sampling depth.
+rare_otu_roots <- as.data.frame(rrarefy(roots_pure, sample = 12672))
+
+# The function rrarefy does not kick out the samples itself so we have to remove it ourselves. Come on rrarefy! You had one job!
+rare_otu_roots <- rare_otu_roots[rowSums(rare_otu_roots) >= 12672, ]
+
+#I am now removing OTUs present in the OTU table that were only present in samples removed following rarefaction. These OTUs will have column sums of 0.
+rare_otu_roots <- rare_otu_roots[, colSums(rare_otu_roots) > 0]
+
+#The following line is for saving the rarefied OTU table. This file is later reloaded to be used in downstream analyses. This is done to maintain consistency of results because rarefying generates slightly different results each time.
+#write.table(rare_otu_roots, "/Volumes/Beant_Kapoor/ITS_analysis_R/Roots_ITS/Tables_from_R/ITS_roots_rarefied_asv.shared", sep = '\t', row.names = TRUE, col.names = TRUE)
+
+#I am now removing singleton OTUs (OTUs with only 1 representative sequence following rarefaction). This is to limit the effects of rare species on our distance matrices used during ordination.
+rare_otu_roots_no_singletons <- rare_otu_roots[, colSums(rare_otu_roots) > 1]
+
+#The following line is for saving the rarefied OTU table with singletons removed. This file is later reloaded to be used in downstream analyses. This is done to maintain consistency of results because rarefying generates slightly different results each time.
+write.table(rare_otu_roots_no_singletons, "/Volumes/Beant_Kapoor/ITS_analysis_R/Roots_ITS/Tables_from_R/ITS_roots_rarefied_no_singletons.shared", sep = '\t', row.names = TRUE, col.names = TRUE)
+```
+
+#The purpose of the following code is to generate relative abundance charts at various taxonomic levels
+
+```{r Relative abundance chart - Phylum}
+#Now that samples have been rarefied I can perform alpha and beta diversity analyses on my data sets. To begin I first reformat my OTU table so that I can do some filtering and add taxonomy information.
+rare_otu_roots_no_singletons <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/Roots_ITS/Tables_from_R/ITS_roots_rarefied_no_singletons.shared", header = TRUE, sep = '\t')
+
+#I now transpose my OTU table so that I can begin to add in taxonomy information.
+trans_otu_roots <- as.data.frame(t(rare_otu_roots_no_singletons))
+
+#The below function is asking specifically for the OTU IDs in the roots OTU table. These are the row names. I will use these to subset the taxonomy file.
+roots_otu_names <- rownames(trans_otu_roots)
+roots_taxonomy <- subset(taxa, rownames(taxa) %in% roots_otu_names)
+
+#Let's duplicate the above object and then we will display the new object without the rownames as they are long sequences.
+roots_taxonomy_print <- roots_taxonomy
+rownames(roots_taxonomy_print) <- NULL
+head(roots_taxonomy_print) #Good job
+
+#By inspecting the dataframe 'roots_taxonomy_print' we found out that we have to clean the taxonomy names. We will do this using regex.
+roots_taxonomy_print <- gsub(pattern = "^\\w__", replacement = "", x = roots_taxonomy_print)
+head(roots_taxonomy_print) # Hooooohooo! That's a success! Now we can apply the same function to 'roots_taxonomy'
+
+roots_taxonomy <- gsub(pattern = "^\\w__", replacement = "", x = roots_taxonomy)
+
+#Now the two dataframes 'roots_taxanomy' and 'trans_otu_roots' are ready to be merged.
+roots_otu_taxonomy <- merge(roots_taxonomy, trans_otu_roots, by = 0)
+
+#We can get rid of the first column as they are not needed anymore
+roots_otu_taxonomy <- roots_otu_taxonomy[, 2:47] #BEAUTIFUL!!!!
+
+#Let's create a dataframe which only consists of only the phylum column and the rarefied ASV table
+roots_otu_phylum <- roots_otu_taxonomy[, c(2, 8:46)] #I am on fire today!
+
+#My guess is down the road we don't really need the rownames so why not get rid of them already. They are making me crazy right now. If we will really need those names we can always come back and rerun the code. Let's do it.
+#rownames(roots_otu_phylum) <- seq(1, nrow(roots_otu_phylum), by = 1) #Good job, it's so much cleaner.
+
+#Get rid of the rows where phylum assignments are NAs. The resulting dataframes should have 897 rows.
+roots_otu_phylum <- roots_otu_phylum[complete.cases(roots_otu_phylum), ]
+rownames(roots_otu_phylum) <- seq(1, nrow(roots_otu_phylum), by = 1)
+
+#The following code is for the generation of phylum relative abundance stacked bar charts. I first sum each ASV by the phylum it belongs to. 
+library(dplyr)
+roots_summed_otu_phylum <- as.data.frame(roots_otu_phylum %>% group_by(Phylum) %>% summarise_each(funs(sum)))
+rownames(roots_summed_otu_phylum) <- make.names(roots_summed_otu_phylum$Phylum)
+roots_summed_otu_phylum <- roots_summed_otu_phylum[, 2:40]
+
+#I then transpose the data frame so that sample names are now row names and column names are OTU names.
+trans_roots_otu_summed_phylum <- as.data.frame(t(roots_summed_otu_phylum))
+
+#Read in a new metadata file for roots to make relative abundance charts
+roots_metadata_for_rel_abund_its <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_roots_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+trans_roots_phylum_metadata <- merge(roots_metadata_for_rel_abund, trans_roots_otu_summed_phylum, by.x = 1, by.y = 0)
+rownames(trans_roots_phylum_metadata) <- make.names(trans_roots_phylum_metadata$Sample)
+trans_roots_phylum_metadata <- trans_roots_phylum_metadata[, 2:10]
+rownames(trans_roots_phylum_metadata) <- NULL
+
+#I then sum each OTU by Treatment column and subset to exclude sample names. This is because the following functions only work on matrices containing numeric data.
+roots_phylum_summed_treatment <- as.data.frame(trans_roots_phylum_metadata %>% group_by(Treatment) %>% summarise_each(funs(sum)))
+
+#Since there are only 8 phyla in the roots they all can be shown on the stacked bar graphs. Therefore, we don't have to make an 'other' category in this case.
+
+#These values are then converted to relative abundance using the decostand function from vegan. 
+library(vegan)
+roots_phylum_rel_abund <- decostand(roots_phylum_summed_treatment[, 2:9], method = 'total')
+roots_phylum_rel_abund <- data.frame(Treatment = roots_phylum_summed_treatment$Treatment, roots_phylum_rel_abund)
+
+#Below I use the melt function from the data.table package to reformat the data into stacked bar graph format. 
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(RColorBrewer)
+roots_phylum_melt <- melt(roots_phylum_rel_abund, id.vars = 'Treatment', variable.name = 'Phylum')
+roots_colors_n_phylum <- length(unique(roots_phylum_melt[, 'Phylum']))
+roots_phylum_melt$Treatment <- as.character(roots_phylum_melt$Treatment)
+roots_phylum_melt$Treatment <- factor(roots_phylum_melt$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Results/ITS_roots_relative_abundance_phylum.tiff", units = 'in', width = 7, height = 7, res = 200)
+roots_rel_phylum <- ggplot(roots_phylum_melt, aes(x = Treatment, y = value, fill = Phylum))+
+  geom_bar(stat = 'identity', show.legend = TRUE, color = 'black')+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(roots_colors_n_phylum))+
+  xlab('Roots')+
+  ylab('Relative Abundance')+
+  ggtitle('ITS Roots at phylum level')+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 14, color = 'black', angle = 90), axis.ticks.x = element_blank(), axis.text.y = element_text(size = 14), axis.line.y.left = element_line(), axis.title.y = element_text(size = 16))
+dev.off()
+```
+
+# The following chunk creates a relative abundance chart at the class level.
+
+```{r Relative abundance chart - Class}
+library(plyr)
+roots_otu_class <- roots_otu_taxonomy[, c(3, 8:46)]
+
+#Get rid of the rows where class assignments are NAs. The resulting dataframe should have 2644 rows.
+roots_otu_class <- roots_otu_class[complete.cases(roots_otu_class), ]
+rownames(roots_otu_class) <- seq(1, nrow(roots_otu_class), by = 1)
+
+#Using dplyr approach to sum each class assignment together
+roots_summed_otu_class <- as.data.frame(roots_otu_class %>% group_by(Class) %>% summarise_each(funs(sum)))
+rownames(roots_summed_otu_class) <- make.names(roots_summed_otu_class$Class)
+roots_summed_otu_class <- roots_summed_otu_class[, 2:40]
+
+#I then transpose the data frame so that sample names are now row names and column names are Class names.
+trans_roots_otu_summed_class <- as.data.frame(t(roots_summed_otu_class))
+
+#Read in a new metadata file for roots to make relative abundance charts
+roots_metadata_for_rel_abund <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_roots_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+trans_roots_class_metadata <- merge(roots_metadata_for_rel_abund, trans_roots_otu_summed_class, by.x = 1, by.y = 0)
+
+#After this point we don't really need the sample names column so we will delete it
+trans_roots_class_metadata <- trans_roots_class_metadata[, 2:30]
+
+#I then sum each Class by Treatment column and subset to exclude sample names. This is because the following functions only work on matrices containing numeric data.
+roots_class_summed_treatment <- as.data.frame(trans_roots_class_metadata %>% group_by(Treatment) %>% summarise_each(funs(sum)))
+roots_class <- roots_class_summed_treatment[, 2:29]
+
+#I am now creating an other category. Other includes those OTUs belonging to a class that comprises less than 1% of the total community. This new object is reffered to as class_others.
+roots_class_others <- roots_class[, colSums(roots_class)/sum(roots_class) <= 0.01]
+roots_class_others_sum <- rowSums(roots_class_others)
+
+#I then create an object that contains all of the classes that comprise more than 1% of the total community.
+roots_class_regular <- roots_class[, colSums(roots_class)/sum(roots_class) > 0.01]
+
+#I then create a dataframe containing the treatment information, the Other column and the remaining phyla
+roots_class_reg_others <- data.frame(Treatment = roots_class_summed_treatment$Treatment, roots_class_regular, Others = roots_class_others_sum)
+
+#These values are then converted to relative abundance using the decostand function from vegan. 
+library(vegan)
+roots_class_rel_abund <- decostand(roots_class_reg_others[, 2:9], method = 'total')
+roots_class_rel_abund <- data.frame(Treatment = roots_class_reg_others$Treatment, roots_class_rel_abund)
+
+#Below I use the melt function from the data.table package to reformat the data into stacked bar graph format. 
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(RColorBrewer)
+roots_class_melt <- melt(roots_class_rel_abund, id.vars = 'Treatment', variable.name = 'Class')
+roots_colors_n_class <- length(unique(roots_class_melt[, 'Class']))
+roots_class_melt$Treatment <- as.character(roots_class_melt$Treatment)
+roots_class_melt$Treatment <- factor(roots_class_melt$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Results/ITS_roots_relative_abundance_class.tiff", units = 'in', width = 7, height = 7, res = 200)
+roots_rel_class <- ggplot(roots_class_melt, aes(x = Treatment, y = value, fill = Class))+
+  geom_bar(stat = 'identity', show.legend = TRUE, color = 'black')+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(roots_colors_n_class))+
+  xlab('Roots')+
+  ylab('Relative Abundance')+
+  ggtitle('ITS Roots at class level')+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 14, color = 'black', angle = 90), axis.ticks.x = element_blank(), axis.text.y = element_text(size = 14), axis.line.y.left = element_line(), axis.title.y = element_text(size = 16))
+dev.off()
+
+#Let's join the relative abundance charts at phylum level and class level together
+tiff(filename = "/Volumes/Beant_Kapoor/ITS_analysis_R/Roots_ITS/Results/ITS_roots_phylum_class_rel_abund.tiff", units = 'in', width = 13, height = 7, res = 200)
+ggarrange(roots_rel_phylum, roots_rel_class, nrow = 1, labels = c("I", "II"), align = 'h')
+dev.off()
+```
+
+# The following code is used to generate the Principal Coordinate Analysis chart
+
+```{r Principal Coordinate Analyses}
+rare_otu_roots_no_singletons_its <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/Roots_ITS/Tables_from_R/ITS_roots_rarefied_no_singletons.shared", header = TRUE, sep = '\t')
+
+roots_metadata_for_rel_abund_its <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_roots_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+
+#We will start with the object named 'rare_otu_roots_no_singletons'
+library(vegan)
+rare_roots_rel_abund_for_pcoa_its <- decostand(rare_otu_roots_no_singletons_its, method = 'total')
+
+#Need to load the library 'ape' and use the vegdist function to create a dissimilarity matrix using the Bray Curtis distance
+library(ape)
+roots_dist_its <- vegdist(rare_roots_rel_abund_for_pcoa_its, method = 'bray')
+roots_pcoa_its <- pcoa(roots_dist_its)
+roots_pcoa_vectors_its <- as.data.frame(roots_pcoa_its$vectors)
+roots_pcoa_vectors_metadata_its <- merge(roots_metadata_for_rel_abund_its, roots_pcoa_vectors_its, by.x = 1, by.y = 0)
+biplot(roots_pcoa_its, plot.axes = c(1, 2))
+roots_pcoa_scores_its <- data.frame(PC1 = roots_pcoa_vectors_its$Axis.1, PC2 = roots_pcoa_vectors_its$Axis.2)
+roots_pcoa_ellipse_its <- ordiellipse(roots_pcoa_scores_its, roots_pcoa_vectors_metadata_its$Treatment)
+
+#Plot the eigenvalues and interpret
+barplot(roots_pcoa_its$values$Relative_eig[1:10])
+
+# Find out the percentage variance explained by the first two principal axes
+roots_pcoa_its$values$Relative_eig[1] * 100 #15.48
+roots_pcoa_its$values$Relative_eig[2] * 100 #9.12
+
+#Extract the plot scores from first two PCoA axes
+roots_pcoa_axes_its <- roots_pcoa_its$vectors[, c(1, 2)]
+
+#In order to change the color scheme of PCoA we will have to add one more column to the dataframe 'roots_pcoa_vectors_metadata'
+roots_treatment_pcoa_color_its <- c('Burn_B', 'Burn_B','Burn_B','Burn_B','Burn_B', 'Burn_C', 'Burn_C','Burn_C','Burn_C','Burn_C', 'Control_D','Control_D','Control_D','Control_D', 'Control_A', 'Control_A','Control_A','Control_A','Control_A', 'Burn_B', 'Burn_B','Burn_B','Burn_B','Burn_B', 'Burn_C', 'Burn_C','Burn_C','Burn_C','Burn_C', 'Control_D', 'Control_D','Control_D','Control_D','Control_D', 'Control_A', 'Control_A','Control_A','Control_A','Control_A')
+roots_pcoa_vectors_metadata_its <- data.frame(Treatment_color = roots_treatment_pcoa_color_its, roots_pcoa_vectors_metadata_its)
+
+year_permanova_roots_its <- c("2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019")
+
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Results/ITS_roots_PCOA.tiff", units = 'in', width = 10, height = 7, res = 200)
+roots_pcoa_its <- ggplot(roots_pcoa_scores_its, aes(PC1, PC2, color = roots_pcoa_vectors_metadata_its$Treatment_color))+
+  geom_point(size = 2, aes(shape = year_permanova_roots_its))+
+  labs(shape = 'Year')+
+  ggtitle('Roots ITS')+
+  xlab('Principal Axis 1 (15.48%)')+
+  xlim(c(-0.6, 0.6))+
+  ylab('Principal Axis 2 (9.12%)')+
+  theme_linedraw()+
+  #scale_color_discrete(name = 'Niches')+
+  theme(plot.title = element_text(family = 'Arial', size=12, face="bold"))+
+  theme(axis.title.x=element_text(family = 'Arial', size=10))+
+  theme(axis.title.y=element_text(family = 'Arial', size=10))+
+  theme(axis.text.x=element_text(family = 'Arial', size=10))+
+  theme(axis.text.y=element_text(family = 'Arial', size=10))+
+  theme(legend.title = element_text(family = 'Arial', face = 'bold', size = 14))+
+  theme(legend.text = element_text(size = 14, family = 'Arial'))+
+  scale_color_brewer(palette = 'Set1', name = 'Treatment')
+dev.off()
+```
+
+# The purpose of this code is to do PERMANOVA on the WHOLE data
+
+```{r}
+# PERMANOVA without plot information
+treatment_roots_whole <- c("Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control","Control","Control","Control","Control","Control","Control","Control","Control","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control","Control","Control","Control","Control","Control","Control","Control","Control","Control")
+
+year_permanova_roots_its <- c("2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019")
+
+roots_permanova_whole <- adonis(rare_roots_rel_abund_for_pcoa~treatment_roots_whole + year_permanova_roots + treatment_roots_whole * year_permanova_roots, method = 'bray', permutations = 10000)
+roots_permanova_whole
+
+roots_plot <- c("B","B","B","B","B","C","C","C","C","C","D","D","D","D","A","A","A","A","A","B","B","B","B","B","C","C","C","C","C","D","D","D","D","D","A","A","A","A","A")
+
+#PERMANOVA with plot information
+roots_permanova_whole_plot <- adonis(rare_roots_rel_abund_for_pcoa ~ treatment_roots_whole +  year_permanova_roots + roots_plot + treatment_roots_whole * year_permanova_roots * roots_plot, method = 'bray', permutations = 10000)
+roots_permanova_whole_plot
+```
+
+# The purpose of the following chunk is to create Shannon Alpha diversity boxplots across treatments
+
+```{r Alpha Diversity}
+# We will calculate alpha diversity of the roots microbial communities using the diversity function from the vegan package. We are going to work with the 'rare_otu_roots' because the structure of this dataset behaves as vegan community matrix data.
+rare_otu_roots <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/Roots_ITS/Tables_from_R/ITS_roots_rarefied_asv.shared", sep = '\t', header = TRUE)
+roots_alpha_diversity <- as.data.frame(diversity(rare_otu_roots, index = 'shannon'))
+
+# Let's add treatment and year columns to the roots_alpha_diversity dataframe
+treatment_roots_whole
+year_permanova_roots
+roots_alpha_diversity_treatment <- data.frame(Treatment = treatment_roots_whole, Year = year_permanova_roots, roots_alpha_diversity)
+colnames(roots_alpha_diversity_treatment)[3] <- 'Shannon_alpha_diversity'
+
+#Write this dataframe to the csv file
+write.csv(roots_alpha_diversity_treatment, file = "/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Tables_from_R/ITS_roots_shannon.csv")
+
+#Adding in the metadata for graph
+roots_alpha_metadata <- merge(roots_metadata_for_rel_abund, roots_alpha_diversity, by.x = 1, by.y = 0)
+rownames(roots_alpha_metadata) <- make.names(roots_alpha_metadata$Sample)
+roots_alpha_metadata <- roots_alpha_metadata[, 2:3]
+rownames(roots_alpha_metadata) <- sub('X', '', rownames(roots_alpha_metadata))
+roots_alpha_metadata$Treatment <- as.character(roots_alpha_metadata$Treatment)
+roots_alpha_metadata$Treatment <- factor(roots_alpha_metadata$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+colnames(roots_alpha_metadata)[2] <- 'shannon_index'
+
+#Let's make the graph now
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Results/ITS_roots_alpha_shannon_index.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggplot(roots_alpha_metadata, aes(x = Treatment, y = shannon_index, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Roots ITS Alpha Diversity')+
+  ylab('Shannon Diversity Index')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Let's make the graph now without legend
+roots_alpha_without_legend <- ggplot(roots_alpha_metadata, aes(x = Treatment, y = shannon_index, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Roots ITS Alpha Diversity')+
+  ylab('Shannon Index')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  theme(legend.position = 'none')+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+```
+
+# The purpose of the following code is generate the boxplots for richness values and find differences across treatments
+
+```{r}
+library(vegan)
+roots_richness <- specnumber(rare_otu_roots)
+roots_richness_df <- data.frame(roots_alpha_metadata, Richness = roots_richness)
+roots_richness_df <- roots_richness_df[, -2]
+roots_richness_df$Treatment <- as.character(roots_richness_df$Treatment)
+roots_richness_df$Treatment <- factor(roots_richness_df$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+#The following code is for the anova of richness values
+roots_richness_metadata <- data.frame(Plot = plot_tree_roots, Year = year_permanova_roots, Treatment = treatment_roots_whole, Richness = roots_richness)
+
+#Order factors by order in dataframe, otherwise, R will alphabetize them
+roots_richness_metadata$Treatment <- factor(roots_richness_metadata$Treatment, levels = unique(roots_richness_metadata$Treatment))
+
+#Make the Year column numeric
+roots_richness_metadata$Year <- as.numeric(roots_richness_metadata$Year)
+
+#Code for the analysis
+library(nlme)
+roots_model_richness <- lme(Richness ~ Treatment + Year + Treatment*Year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = roots_richness_metadata, method = "REML")
+library(car)
+Anova(roots_model_richness)
+
+# This is the graph with legend
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Results/ITS_roots_richness.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggplot(roots_richness_df, aes(x = Treatment, y = Richness, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Roots ITS Richness')+
+  ylab('ASV Richness')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Let's make the graph without legend
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Results/ITS_roots_richness_without_legend.tiff", units = 'in', width = 8, height = 7, res = 200)
+roots_richness_chart_without_legend <- ggplot(roots_richness_df, aes(x = Treatment, y = Richness, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Roots ITS Richness')+
+  ylab('ASV Richness')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  theme(legend.position = 'none')+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Now let's combine the alpha diversity and richness chart using ggarrange
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/roots_ITS/Results/ITS_roots_richness_and_shannon.tiff", units = 'in', height = 10, width = 8, res = 300)
+ggarrange(roots_richness_chart_without_legend + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()), roots_alpha_without_legend,  ncol = 1, labels = c("I", "II"), align = 'v', hjust = -3)
+dev.off()
+```
+
+#The purpose of this code chunk is to find differences in shannon alpha diversity across treatments.
+
+```{r Differences in shannon index}
+#We have to generate a new object for plot information
+plot_tree_roots <- c("B_1", "B_2","B_3","B_4","B_5", "C_1", "C_2","C_3","C_4","C_5", "D_1", "D_2", "D_3", "D_5", "A_1", "A_2","A_3","A_4","A_5","B_1", "B_2","B_3","B_4","B_5", "C_1", "C_2","C_3","C_4","C_5", "D_1", "D_2", "D_3", "D_4", "D_5", "A_1", "A_2","A_3","A_4","A_5")
+
+#We will start with object 'roots_alpha_diversity_treatment' and add one more column to it and that is plot information
+roots_plot_shannon <- data.frame(Plot = plot_tree_roots, Year = year_permanova_roots, Treatment = treatment_roots_whole, roots_alpha_metadata)
+roots_plot_shannon <- roots_plot_shannon[, -4]
+colnames(roots_plot_shannon)[4] <- "Shannon_index"
+
+#Install required packages if they are not already installed
+if(!require(psych)){install.packages("psych")}
+if(!require(nlme)){install.packages("nlme")}
+if(!require(car)){install.packages("car")}
+if(!require(multcompView)){install.packages("multcompView")}
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(ggplot2)){install.packages("ggplot2")}
+if(!require(rcompanion)){install.packages("rcompanion")}
+
+#Order factors by order in dataframe, otherwise, R will alphabetize them
+roots_plot_shannon$Treatment <- factor(roots_plot_shannon$Treatment, levels = unique(roots_plot_shannon$Treatment))
+
+#Convert the Year column to numeric
+roots_plot_shannon$Year <- as.numeric(roots_plot_shannon$Year)
+
+#Code for the analysis
+library(nlme)
+roots_model_alpha_diversity <- lme(Shannon_index ~ Treatment + Year + Treatment*Year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = roots_plot_shannon, method = "REML")
+library(car)
+Anova(roots_model_alpha_diversity)
+```

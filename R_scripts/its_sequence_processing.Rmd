@@ -1,0 +1,742 @@
+---
+title: "dogwood_microbiome_analysis_sp22_ajo"
+author: "Aaron Onufrak"
+date: "2/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+library(dada2)
+library(Biostrings)
+library(ShortRead)
+library(vegan)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(car)
+library(ape)
+library(nlme)
+library(emmeans)
+library(ggpubr)
+library(corrplot)
+library(factoextra)
+library(data.table)
+```
+
+# Step 1: Data import and initial quality assessment
+
+```{r,message=FALSE, warning=FALSE}
+# Path to all original sequence files
+path.its<-"/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_its_dwdmcb"
+
+# Object for forward reads. the list.files command will lost only the files that have the specified pattern. The L001_R1_001.fastq indicates the forward reads. 
+forwardreads.its.all<-sort(list.files(path.its, pattern="R1",full.names=TRUE))
+
+# Using grep to pull out only forward reads of 2019 samples. 
+forwardreads.its<-forwardreads.its.all[grep("19C",forwardreads.its.all)]
+
+# Object for reverse reads. the list.files command will lost only the files that have the specified pattern. The L001_R2_001.fastq indicates the reverse reads. 
+reversereads.its.all<-sort(list.files(path.its, pattern="R2",full.names=TRUE))
+
+# Using grep to pull out only reverse reads of 2019 samples.
+reversereads.its<-reversereads.its.all[grep("19C",reversereads.its.all)]
+
+# Sanity check to make sure number of forward files equals number of reverse reads. 
+paste("number of forward files", length(forwardreads.its))
+paste("number of reverse files", length(reversereads.its))
+
+# Sanity check to make sure number of reads in forward files is equivalent to number of reads in reverse files. 
+paste("number of reads in forward files",sum(sapply(forwardreads.its,countLines))/4)
+paste("number of reads in forward files",sum(sapply(reversereads.its,countLines))/4)
+
+# Generating initial quality plots of the raw data for forward reads.
+initial_fwd_qual<-plotQualityProfile(forwardreads.its,aggregate = TRUE)
+initial_fwd_qual
+
+# Generating initial quality plots of the raw data for reverse reads.
+initial_rev_qual<-plotQualityProfile(reversereads.its,aggregate = TRUE)
+initial_rev_qual
+
+# Using the basename function to remove pathway information from the name of each file.
+filebasename<-basename(forwardreads.its)
+
+# We then split the file name using the strsplit function. This will allow us to separate out the first part of the file names (separated by -) from the other sections of the file name (separated by _). These other sections contain info related to the sequencing platform and whether the file is the forward or reverse read. 
+splitbasename<-strsplit(filebasename,'_')
+
+# We then use sapply to select the first portion of each file name. This will be the name that corresponds with the sample name. 
+samplenames<-sapply(splitbasename,`[`, 1)
+```
+
+# Step 2: Initial quality filtering to remove ambiguous bases
+
+```{r}
+# Creating a directory to store filtered forward reads
+forward.filtN.its<-file.path(path.its,"filtN",basename(forwardreads.its))
+
+# Creating a directory to store filtered reverse reads
+reverse.filtN.its<-file.path(path.its,"filtN",basename(reversereads.its))
+
+
+# Using the filterAndTrim function to filter out reads with ambiguous bases.   
+filterAndTrim(forwardreads.its,forward.filtN.its,reversereads.its,reverse.filtN.its,maxN=0)
+
+# Inspecting quality files of initially filtered forward reads.
+ambig_fwd_qual<-plotQualityProfile(forward.filtN.its, aggregate=TRUE)
+ambig_fwd_qual
+
+# Inspecting quality files of initially filtered reverse reads. 
+ambig_rev_qual<-plotQualityProfile(reverse.filtN.its, aggregate=TRUE)
+ambig_rev_qual
+
+
+```
+
+# Step 3: Primer removal with cutadapt
+
+```{r}
+# Creating objects that contain the forward and reverse primers used in the study.
+its3ngs1<-"CATCGATGAAGAACGCAG"
+its3ngs2<-"CAACGATGAAGAACGCAG"
+its3ngs3<-"CACCGATGAAGAACGCAG"
+its3ngs4<-"CATCGATGAAGAACGTAG"
+its3ngs5<-"CATCGATGAAGAACGTGG"
+its3ngs10<-"CATCGATGAAGAACGCTG"
+its4ngr<-"TCCTSCGCTTATTGATATGC"
+archits4<-"TCCTCGCCTTATTGATATGC"
+
+# Creating a function called allorientations to identify all potenital orientations of the primers. Then use the complement, reverse, and reverseComplement functions to store all possible orientations of the primers in the orientations object. Last, we use the sapply function to convert all orientations into individual strings of text.
+
+allorientations<-function(primer){       
+  require(Biostrings)     
+  dna<-DNAString(primer)                                                    
+  orientations<-c(Forward=dna, Complement=Biostrings::complement(dna),Reverse=Biostrings::reverse(dna), 
+             RevComp=Biostrings::reverseComplement(dna)) 
+  return(sapply(orientations,toString))
+}
+
+# Storing all possible orientations of our primers in objects for each primer.
+its3ngs1.ori<-allorientations(its3ngs1)
+its3ngs2.ori<-allorientations(its3ngs2)
+its3ngs3.ori<-allorientations(its3ngs3)
+its3ngs4.ori<-allorientations(its3ngs4)
+its3ngs5.ori<-allorientations(its3ngs5)
+its3ngs10.ori<-allorientations(its3ngs10)
+its4ngr.ori<-allorientations(its4ngr)
+archits4.ori<-allorientations(archits4)
+
+# Identifying occurences of the primers by creating a function called primeroccurences.This function will use the vcountPattern function which will return a vector containing the number of times a particular primer is detected in a sequence and the readFastq function which will take all fastq files in a particular directory and turn them into a single object. 
+primeroccurences<-function(primer, directory) { 
+  nhits<-vcountPattern(primer, sread(readFastq(directory)),fixed=FALSE) 
+  return(sum(nhits>0))
+}
+
+# Using the sapply function to apply the primeroccurences function created above to our directories that contain our forward and reverse reads.The rbind function allows us to create a table for each combination of primer and forward and reverse reads. 
+primertable_its<-
+  rbind(its3ngs1.forwardreads_its=sapply(its3ngs1.ori,primeroccurences,directory=forward.filtN.its),
+      its3ngs1.reversereads_its=sapply(its3ngs1.ori,primeroccurences,directory=reverse.filtN.its),
+      its3ngs2.forwardreads_its=sapply(its3ngs2.ori,primeroccurences,directory=forward.filtN.its),
+      its3ngs2.reversereads_its=sapply(its3ngs2.ori,primeroccurences,directory=reverse.filtN.its),
+      its3ngs3.forwardreads_its=sapply(its3ngs3.ori,primeroccurences,directory=forward.filtN.its),
+      its3ngs3.reversereads_its=sapply(its3ngs3.ori,primeroccurences,directory=reverse.filtN.its),
+      its3ngs4.forwardreads_its=sapply(its3ngs4.ori,primeroccurences,directory=forward.filtN.its),
+      its3ngs4.reversereads_its=sapply(its3ngs4.ori,primeroccurences,directory=reverse.filtN.its),
+      its3ngs5.forwardreads_its=sapply(its3ngs5.ori,primeroccurences,directory=forward.filtN.its),
+      its3ngs5.reversereads_its=sapply(its3ngs5.ori,primeroccurences,directory=reverse.filtN.its),
+      its3ngs10.forwardreads_its=sapply(its3ngs10.ori,primeroccurences,directory=forward.filtN.its),
+      its3ngs10.reversereads_its=sapply(its3ngs10.ori,primeroccurences,directory=reverse.filtN.its),
+      its4ngr.forwardreads_its=sapply(its4ngr.ori,primeroccurences,directory=forward.filtN.its),
+      its4ngr.reversereads_its=sapply(its4ngr.ori,primeroccurences,directory=reverse.filtN.its),
+      archits4.forwardreads_its=sapply(archits4.ori,primeroccurences,directory=forward.filtN.its),
+      archits4.reversereads_its=sapply(archits4.ori,primeroccurences,directory=reverse.filtN.its))
+primertable_its
+
+# Specifying the directory where we have saved the cutadapt program
+cutadapt<-"/Users/aonufrak/opt/miniconda3/bin/cutadapt"
+
+# Using the system2 function to pass commands to the shell so that we can run cutadapt from R. In this case, we call cutadapt and pass the argument --version to find out what version of cutadapt we are using. 
+system2(cutadapt,args="--version")
+
+# Creating a directory to store the forward and reverse reads after they have been trimmed.
+path.cut<-file.path(path.its,"cutadapt")
+if(!dir.exists(path.cut)) dir.create(path.cut)
+
+# Creating an object to store the forward reads
+forwardreads.cut.its<-file.path(path.cut,basename(forwardreads.its))
+
+# Creating an object to store the reverse reads. 
+reversereads.cut.its<-file.path(path.cut,basename(reversereads.its))
+
+# Creating objects containing the forward and reverse primer reverse compliment strings. By using the :: syntax we are able to call a function stored in the dada2 package without having to load the whole dada2 package. In this case we will call the rc function of the dada2 package. The rc function takes a sequence object provided by the user and creates the reverse compliment of the sequence. 
+its3ngs1.rc1<-dada2::rc(its3ngs1)
+its3ngs2.rc1<-dada2::rc(its3ngs2)
+its3ngs3.rc1<-dada2::rc(its3ngs3)
+its3ngs4.rc1<-dada2::rc(its3ngs4)
+its3ngs5.rc1<-dada2::rc(its3ngs5)
+its3ngs10.rc1<-dada2::rc(its3ngs10)
+its4ngr.rc1<-dada2::rc(its4ngr)
+archits4.rc1<-dada2::rc(archits4)
+
+# Using the paste function we then create objects that contain the flags for the potential combinations of each forward and reverse primer and the reverse compliment. These flags will serve as the argumentst that we provide to cutadapt. The ^ at the beginning of the sequence indicates that the primer should be removed from the beginning of the sequence. 
+its3ngs1.its4.r1.flags<-paste("-a"," ", "^", its3ngs1,"...",its4ngr.rc1, sep='') 
+its3ngs1.arch.r1.flags<-paste("-a"," ", "^", its3ngs1,"...",archits4.rc1, sep='') 
+its3ngs2.its4.r1.flags<-paste("-a"," ", "^", its3ngs2,"...",its4ngr.rc1, sep='') 
+its3ngs2.arch.r1.flags<-paste("-a"," ", "^", its3ngs2,"...",archits4.rc1, sep='') 
+its3ngs3.its4.r1.flags<-paste("-a"," ", "^", its3ngs3,"...",its4ngr.rc1, sep='') 
+its3ngs3.arch.r1.flags<-paste("-a"," ", "^", its3ngs3,"...",archits4.rc1, sep='')
+its3ngs4.its4.r1.flags<-paste("-a"," ", "^", its3ngs4,"...",its4ngr.rc1, sep='') 
+its3ngs4.arch.r1.flags<-paste("-a"," ", "^", its3ngs4,"...",archits4.rc1, sep='')
+its3ngs5.its4.r1.flags<-paste("-a"," ", "^", its3ngs5,"...",its4ngr.rc1, sep='') 
+its3ngs5.arch.r1.flags<-paste("-a"," ", "^", its3ngs5,"...",archits4.rc1, sep='')
+its3ngs10.its4.r1.flags<-paste("-a"," ", "^", its3ngs10,"...",its4ngr.rc1, sep='') 
+its3ngs10.arch.r1.flags<-paste("-a"," ", "^", its3ngs10,"...",archits4.rc1, sep='')
+
+its4.its3ngs1.r2.flags<-paste("-A"," ", "^", its4ngr,"...",its3ngs1.rc1, sep='') 
+arch.its3ngs1.r2.flags<-paste("-A"," ", "^", archits4,"...",its3ngs1.rc1, sep='') 
+its4.its3ngs2.r2.flags<-paste("-A"," ", "^", its4ngr,"...",its3ngs2.rc1, sep='') 
+arch.its3ngs2.r2.flags<-paste("-A"," ", "^", archits4,"...",its3ngs2.rc1, sep='') 
+its4.its3ngs3.r2.flags<-paste("-A"," ", "^", its4ngr,"...",its3ngs3.rc1, sep='') 
+arch.its3ngs3.r2.flags<-paste("-A"," ", "^", archits4,"...",its3ngs3.rc1, sep='') 
+its4.its3ngs4.r2.flags<-paste("-A"," ", "^", its4ngr,"...",its3ngs4.rc1, sep='') 
+arch.its3ngs4.r2.flags<-paste("-A"," ", "^", archits4,"...",its3ngs4.rc1, sep='') 
+its4.its3ngs5.r2.flags<-paste("-A"," ", "^", its4ngr,"...",its3ngs5.rc1, sep='') 
+arch.its3ngs5.r2.flags<-paste("-A"," ", "^", archits4,"...",its3ngs5.rc1, sep='') 
+its4.its3ngs10.r2.flags<-paste("-A"," ", "^", its4ngr,"...",its3ngs10.rc1, sep='') 
+arch.its3ngs10.r2.flags<-paste("-A"," ", "^", archits4,"...",its3ngs10.rc1, sep='') 
+
+
+# Using cutadapt to remove the primers from each read. Because we have twelve pairs of forward and reverse primers we instruct cutadapt to make 12 passes through the forward reads and twelve passes through the reverse reads for each possible primer pair using the -n 12 flag.
+for (i in seq_along(forwardreads.its)){
+  system2(cutadapt,args=c(its3ngs1.its4.r1.flags,
+                          its3ngs1.arch.r1.flags,
+                          its3ngs2.its4.r1.flags,
+                          its3ngs2.arch.r1.flags,
+                          its3ngs3.its4.r1.flags,
+                          its3ngs3.arch.r1.flags,
+                          its3ngs4.its4.r1.flags,
+                          its3ngs4.arch.r1.flags,
+                          its3ngs5.its4.r1.flags,
+                          its3ngs5.arch.r1.flags,
+                          its3ngs10.its4.r1.flags,
+                          its3ngs10.arch.r1.flags,
+                          its4.its3ngs1.r2.flags,
+                          arch.its3ngs1.r2.flags,
+                          its4.its3ngs2.r2.flags,
+                          arch.its3ngs2.r2.flags,
+                          its4.its3ngs3.r2.flags,
+                          arch.its3ngs3.r2.flags,
+                          its4.its3ngs4.r2.flags,
+                          arch.its3ngs4.r2.flags,
+                          its4.its3ngs5.r2.flags,
+                          arch.its3ngs5.r2.flags,
+                          its4.its3ngs10.r2.flags,
+                          arch.its3ngs10.r2.flags,
+                          "-n",12,
+                          "--discard-untrimmed",
+                          "-o",forwardreads.cut.its[i], "-p",reversereads.cut.its[i],
+                   forward.filtN.its[i],reverse.filtN.its[i]))
+}
+
+# Evaluating the efficacy of our primer removal with cutadapt using the primeroccurrences function.
+primertable2.its<-
+  rbind(its3ngs1.forwaredreads.cut.its=sapply(its3ngs1.ori,primeroccurences,directory=forwardreads.cut.its),
+      its3ngs1.reversereads.cut.its=sapply(its3ngs1.ori,primeroccurences,directory=reversereads.cut.its),
+      its3ngs2.forwaredreads.cut.its=sapply(its3ngs2.ori,primeroccurences,directory=forwardreads.cut.its),
+      its3ngs2.reversereads.cut.its=sapply(its3ngs2.ori,primeroccurences,directory=reversereads.cut.its),
+      its3ngs3.forwaredreads.cut.its=sapply(its3ngs3.ori,primeroccurences,directory=forwardreads.cut.its),
+      its3ngs3.reversereads.cut.its=sapply(its3ngs3.ori,primeroccurences,directory=reversereads.cut.its),
+      its3ngs4.forwaredreads.cut.its=sapply(its3ngs4.ori,primeroccurences,directory=forwardreads.cut.its),
+      its3ngs4.reversereads.cut.its=sapply(its3ngs4.ori,primeroccurences,directory=reversereads.cut.its),
+      its3ngs5.forwaredreads.cut.its=sapply(its3ngs5.ori,primeroccurences,directory=forwardreads.cut.its),
+      its3ngs5.reversereads.cut.its=sapply(its3ngs5.ori,primeroccurences,directory=reversereads.cut.its),
+      its3ngs10.forwaredreads.cut.its=sapply(its3ngs10.ori,primeroccurences,directory=forwardreads.cut.its),
+      its3ngs10.reversereads.cut.its=sapply(its3ngs10.ori,primeroccurences,directory=reversereads.cut.its),
+      its4ngr.forwaredreads.cut.its=sapply(its4ngr.ori,primeroccurences,directory=forwardreads.cut.its),
+      its4ngr.reversereads.cut.its=sapply(its4ngr.ori,primeroccurences,directory=reversereads.cut.its),
+      archits4.forwaredreads.cut.its=sapply(archits4.ori,primeroccurences,directory=forwardreads.cut.its),
+      archits4.reversereads.cut.its=sapply(archits4.ori,primeroccurences,directory=reversereads.cut.its))
+primertable2.its
+
+```
+
+# Step 4: Quality filtering
+
+```{r}
+# Creating directory for forward filtered reads.
+filtforward.its<-file.path(path.its, "filtered", paste0(samplenames,"_F_filt.fastq.gz"))
+
+# Creating directory for reverse filtered reads. 
+filtreverse.its<-file.path(path.its,"filtered",paste0(samplenames,"_R_filt.fastq.gz"))
+
+# We then assign names to each pathway to more easily refer to the paths. These names are based on the sample names of each file. 
+names(filtforward.its)<-samplenames
+names(filtreverse.its)<-samplenames
+
+# Quality filtering  using filterAndTrim function.
+filter.out.ds<-filterAndTrim(fwd=forwardreads.cut.its, filt=filtforward.its, rev=reversereads.cut.its, filt.rev=filtreverse.its,maxEE =c(2,2), compress=TRUE, multithread = TRUE)
+
+# Generating quality plots for forward reads post quality filtering. 
+filter.fwd.qual.plot<-plotQualityProfile(filtforward.its,aggregate = TRUE)
+filter.fwd.qual.plot
+
+# Generating quality plots for reverse reads post quality filtering. 
+filter.rev.qual.plot<-plotQualityProfile(filtreverse.its,aggregate=TRUE)
+filter.rev.qual.plot
+
+# In the previous step, we created an object called filter.out.ds. This object is currently a matrix. We will convert this object into a dataframe so we can work with it a little bit more easily down the road. 
+filter.out.ds<-as.data.frame(filter.out.ds)
+
+# We want to see which sample lost the most number of reads during the filtering process. First we will create a new column that represents the differences between the reads that were fed into the filter and the reads that passed the filter. 
+filter.out.ds$diffs<- filter.out.ds$reads.in-filter.out.ds$reads.out
+
+# Then we will use the order command to sort the dataframe by the new column (diffs) that we created above. 
+filter.out.ds[order(filter.out.ds$diffs),]
+```
+
+# Step 5: learning Error Rates
+
+```{r}
+# Using learnErrors to learn error rates for forward reads.  
+errorforward.its<-learnErrors(filtforward.its, multithread = TRUE)
+
+# Using learnErrors to learn error rates for reverse reads. 
+errorreverse.its<-learnErrors(filtreverse.its,multithread = TRUE)
+
+# Generating error rates of forward reads.
+errplots_fwd.its<-plotErrors(errorforward.its, nominalQ=TRUE)
+errplots_fwd.its
+
+# Generating error rates of reverse reads.
+errplots_rev.its<-plotErrors(errorreverse.its,nominalQ = TRUE)
+errplots_rev.its
+```
+
+# Step 6: Dereplicating Reads
+
+```{r}
+# Dereplication using derepFastq(merging identical reads into single sequences) for forward reads.
+derepforward.its<-derepFastq(filtforward.its,verbose=FALSE)
+
+# Dereplication using derepFastq(merging identical reads into single sequences) for reverse reads.
+derepreverse.its<-derepFastq(filtreverse.its,verbose=FALSE)
+
+# Assigning the sample names to the dereplicated sequence objects
+names(derepforward.its)<-samplenames
+names(derepreverse.its)<-samplenames
+```
+
+# Step 7: Denoising with dada2
+
+```{r}
+# Denoising the forward reads with dada2
+dadaforwardreads.its<-dada(derepforward.its,err=errorforward.its,multithread = TRUE)
+
+# Denoising the reverse reads with dada2
+dadareversereads.its<-dada(derepreverse.its,err=errorreverse.its,multithread = TRUE)
+```
+
+# Step 8: Merging Reads and Creating Sequence Table
+
+```{r}
+# Merging forward and reverse reads using mergePairs. 
+merge.its<-mergePairs(dadaforwardreads.its,derepforward.its,dadareversereads.its,derepreverse.its,verbose=FALSE)
+
+# Creating a sequence table using makeSequenceTable.
+seqtab.its<-makeSequenceTable(merge.its)
+
+# Determining read length distribution using getSequences.
+table(nchar(getSequences(seqtab.its)))
+
+# Removing sequences longer than or shorter than expected amplicon size. 
+seqtab.its<-seqtab.its[,nchar(colnames(seqtab.its)) %in% 233:452]
+
+```
+
+# Step 9: Removing chimeras
+
+```{r}
+# We then remove chimeras using the removeBimeraDenovo function.
+seqtab.nochim.its<-removeBimeraDenovo(seqtab.its,method="consensus", multithread=TRUE, verbose=TRUE)
+```
+
+# Step 10: Sequence Processing Assessment
+
+```{r}
+# Constructing a table to assess the number of sequences retained at each step of the dada2 pipeline.
+
+# Creating a function called getN that takes the sum of unique sequences (getUniques)
+getN<-function(x) sum(getUniques(x))
+
+# Using cbind to create a table that contains the counts of the original number of reads after primer trimming, the reads after filtering, the reads after denoising, the reads after merging, and the reads after chimera removal.
+track.its<-cbind(filter.out.ds,sapply(dadaforwardreads.its,getN), sapply(dadareversereads.its,getN), sapply(merge.its,getN), rowSums(seqtab.nochim.its))
+
+# Assigning column names to the table
+colnames(track.its) <- c("input", "filtered","diffs", "denoisedF", "denoisedR", "merged", "nonchim")
+
+# Assigning row names to the table 
+rownames(track.its) <- samplenames
+track.its
+
+
+# Number of ASVs in the study
+ncol((seqtab.nochim.its))
+
+nrow(seqtab.nochim.its)
+
+# Number of sequences
+sum(seqtab.nochim.its)
+```
+
+# Step 11: Assigning Taxonomy
+
+```{r}
+# Assigning taxonomy using the assignTaxonomy function.
+taxa.its<-assignTaxonomy(seqtab.nochim.its,"/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_its_dwdmcb/sh_general_release_dynamic_all_10.05.2021.fasta",multithread = TRUE, minBoot=80)
+
+# Converting the taxonomy assignments to data frame so we can filter the taxonomic assignments.
+taxa.original.its<-as.data.frame(taxa.its)
+
+# Filtering out ASVs not assigned to a fungal phyla
+taxa.na.omit.its<-taxa.original.its[-(which(is.na(taxa.original.its$Phylum))),]
+
+# Filtering out ASVs assigned to Cornus florida
+taxa.plant.omit.its<-taxa.na.omit.its[-(which(taxa.na.omit.its$Kingdom=="k__Viridiplantae")),]
+
+# Filtering out metazoans
+taxa.fungi.its<-taxa.plant.omit.its[-(which(taxa.plant.omit.its$Kingdom=="k__Metazoa")),]
+
+# Transposing the ASV table so that taxonomy can be added. 
+t.seqtab.nochim.its<-t(seqtab.nochim.its)
+
+# Merging the two tables together based on row name. 
+t.seqtab.nochim.filt.its<-t.seqtab.nochim.its[row.names(t.seqtab.nochim.its)%in%row.names(taxa.fungi.its),]
+
+# Number of ASVs & number of sequences post-filtering
+nrow(t.seqtab.nochim.filt.its)
+sum(t.seqtab.nochim.filt.its)
+
+
+# Merging taxonomy information into ASV table
+t.seqtab.tax.its<-merge(t.seqtab.nochim.filt.its,taxa.fungi.its, by="row.names")
+
+# Creating ASV labels and make these new row names.
+asvnumber.its<-as.character(c(1:nrow(t.seqtab.nochim.filt.its)))
+asvnumber.its<-paste("asv_its",labels(asvnumber.its))
+
+row.names(t.seqtab.tax.its)<-NULL
+t.seqtab.tax.its$Row.names<-NULL
+row.names(t.seqtab.tax.its)<-asvnumber.its
+
+
+# Changing NA entries to more informative names. 
+t.seqtab.tax.its$Class[is.na(t.seqtab.tax.its$Class)] = "c__Unidentified"
+t.seqtab.tax.its$Order[is.na(t.seqtab.tax.its$Order)] = "o__Unidentified"
+t.seqtab.tax.its$Family[is.na(t.seqtab.tax.its$Family)] = "f__Unidentified"
+t.seqtab.tax.its$Genus[is.na(t.seqtab.tax.its$Genus)] = "g__Unidentified"
+t.seqtab.tax.its$Species[is.na(t.seqtab.tax.its$Species)] = "s__Unidentified"
+
+
+```
+
+# Step 12: Rarefaction
+
+## Plant Associated Niches
+
+```{r}
+# Importing metadata describing sample origin and treatment. 
+metadata_burn<-read.table("/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_bac_dwdmcb/postburn_metadata_allniches.txt",sep='\t',header=TRUE)
+
+# Adding ITS to sample names in metadata. 
+metadata_burn$Sample<-paste(metadata_burn$Sample,"ITS",sep='')
+
+# Creating an object that contains only per sample ASV abundance data for  the year 2019.
+t.asv.tab.its.2019<-t.seqtab.tax.its[,1:100]
+
+# Creating an object that contains only plant niches using grep. 
+t.asv.tab.its.2019.plant<-t.asv.tab.its.2019[,grep("1ITS",colnames(t.asv.tab.its.2019),invert = TRUE)]
+
+# Sanity check to make sure only plant niches are included. 
+length(t.asv.tab.its.2019.plant)
+labels(t.asv.tab.its.2019.plant)
+
+# Transposing the file so that we can use it with the vegan package down the road.  
+asv.tab.its.2019.plant<-t(t.asv.tab.its.2019.plant)
+
+
+# Using the rarecurve function from vegan to generate our rarefaction curves for only plant associated samples.
+asv.rarecurve.its.2019.plant<-vegan::rarecurve(asv.tab.its.2019.plant)
+
+# Determining number of sequences per sample. 
+sort(rowSums(asv.tab.its.2019.plant))
+
+# Generating a ggplot that displays the curves in a more aesthetically pleasing way. First we create a function that will allow us to store the Subsample attribute in a separate object. This will serve as the x-axis variable.      
+rarecurve_plotter<-function(x) attr(x,which="Subsample")
+rarecurve.attributes.its.2019.plant<-sapply(asv.rarecurve.its.2019.plant,rarecurve_plotter)
+
+library(ggplot2)
+rare_plot_all_its_2019.plant<-ggplot() 
+for (i in 1:length(asv.rarecurve.its.2019.plant)){
+  rare_plot_all_its_2019.plant<-rare_plot_all_its_2019.plant+geom_line(aes_(x=rarecurve.attributes.its.2019.plant[[i]], y=asv.rarecurve.its.2019.plant[[i]]),size=1)
+}
+rare_plot_all_its_2019.plant+
+  geom_vline(xintercept=c(sort(rowSums(asv.tab.its.2019.plant))[1:10]), color="blue")+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+  panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))
+
+
+rare_plot_all_its_2019<-ggplot() 
+for (i in 1:length(asv.rarecurve.its.2019)){
+  rare_plot_all_its_2019<-rare_plot_all_its_2019+geom_line(aes_(x=rarecurve.attributes.its.2019[[i]], y=asv.rarecurve.its.2019[[i]]),size=1)
+}
+rare_plot_all_its_2019<-rare_plot_all_its_2019+
+  geom_vline(xintercept=4000, color="blue")+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+  panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))
+
+# Using the rrarefy function from vegan to rarefy our plant associated samples. The sample value is the number of sequences we want each sample to have following rarefaction. This is the value we have chosen based on our rarefaction curves.
+rare.asv.tab.its.2019.plant<-as.data.frame(rrarefy(asv.tab.its.2019.plant, sample=4000))
+
+# Exporting rarefied ASV table for statistical analyses.
+
+#write.table(rare.asv.tab.its.2019.plant,file="/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_its_dwdmcb/rare.asv.tab.its.2019.plant.txt",sep="\t",row.names = TRUE,col.names = TRUE)
+```
+
+## Soil Niches
+
+```{r}
+# Creating an object that contains only soil using grep. 
+t.asv.tab.its.2019.soil<-t.asv.tab.its.2019[,grep("1ITS",colnames(t.asv.tab.its.2019),invert = TRUE)]
+  
+# Sanity check to make sure only soil samples are included. 
+length(t.asv.tab.its.2019.soil)
+labels(t.asv.tab.its.2019.soil)
+
+
+# Using the rarecurve function from vegan to generate our rarefaction curves for only soil samples.
+asv.rarecurve.its.2019.soil<-vegan::rarecurve(asv.tab.its.2019.soil)
+
+# Determining the number of sequences per sample. 
+sort(rowSums(asv.tab.its.2019.soil))
+
+# Generating a ggplot that displays the curves in a more aesthetically pleasing way. First we create a function that will allow us to store the Subsample attribute in a separate object. This will serve as the x-axis variable.    
+rarecurve_plotter<-function(x) attr(x,which="Subsample")
+rarecurve.attributes.its.2019.soil<-sapply(asv.rarecurve.its.2019.soil,rarecurve_plotter)
+
+
+rare_plot_soil_bac_2019<-ggplot() 
+for (i in 1:length(asv.rarecurve.its.2019.soil)){
+  rare_plot_soil_bac_2019<-rare_plot_soil_bac_2019+geom_line(aes_(x=rarecurve.attributes.its.2019.soil[[i]], y=asv.rarecurve.its.2019.soil[[i]]),size=1)
+}
+rare_plot_soil_bac_2019<-rare_plot_soil_bac_2019+
+  geom_vline(xintercept=c(12151), color="blue")+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+  panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))
+
+#  Using the rrarefy function from vegan to rarefy soil samples. The sample value is the number of sequences we want each sample to have following rarefaction. This is the value we have chosen based on our rarefaction curves.
+ 
+rare.asv.tab.its.2019.soil<-as.data.frame(rrarefy(asv.tab.its.2019.soil, sample=12151))
+
+
+#write.table(rare.asv.tab.its.2019.soil,file="/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_its_dwdmcb/rarefied_asv_tables_its/rare.asv.tab.its.2019.soil.txt",sep="\t",row.names = TRUE,col.names = TRUE)
+```
+
+## Roots
+
+```{r}
+# Using grep to subset metadata and only pull out root samples. 
+met.its.roots<-metadata_burn[grep("Roots",metadata_burn$Niche),]
+  
+# Subsetting ASV table to create a new table that is only root samples. 
+asv.tab.its.2019.roots<-subset(asv.tab.its.2019,rownames(asv.tab.its.2019)%in%met.its.roots$Sample)
+
+# Using the rarecurve function from vegan to generate our rarefaction curves for only roots samples.
+asv.rarecurve.its.2019.roots<-vegan::rarecurve(asv.tab.its.2019.roots)
+
+sort(rowSums(asv.tab.its.2019.roots))
+
+
+# Generating a ggplot that displays the curves in a more aesthetically pleasing way. First we create a function that will allow us to store the Subsample attribute in a separate object. This will serve as the x-axis variable.     
+rarecurve_plotter<-function(x) attr(x,which="Subsample")
+rarecurve.attributes.its.2019.roots<-sapply(asv.rarecurve.its.2019.roots,rarecurve_plotter)
+
+rare_plot_roots_bac_2019<-ggplot() 
+for (i in 1:length(asv.rarecurve.its.2019.roots)){
+  rare_plot_roots_bac_2019<-rare_plot_roots_bac_2019+geom_line(aes_(x=rarecurve.attributes.its.2019.roots[[i]], y=asv.rarecurve.its.2019.roots[[i]]),size=1)
+}
+rare_plot_roots_bac_2019<-rare_plot_roots_bac_2019+
+  geom_vline(xintercept=c(1655), color="blue")+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+  panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))
+
+# Using the rrarefy function from vegan to rarefy root samples. The sample value is the number of sequences we want each sample to have following rarefaction. This is the value we have chosen based on our rarefaction curves.
+ 
+rare.asv.tab.its.2019.roots<-as.data.frame(rrarefy(asv.tab.its.2019.roots, sample=1655))
+
+#write.table(rare.asv.tab.its.2019.roots,file="/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_its_dwdmcb/rarefied_asv_tables_its/rare.asv.tab.its.2019.roots.txt",sep="\t",row.names = TRUE,col.names = TRUE)
+
+```
+
+## Bark
+
+```{r}
+# Using grep to subset metadata and only pull out bark samples. 
+met.its.bark<-metadata_burn[grep("Bark",metadata_burn$Niche),]
+  
+# Subsetting ASV table to create a new table that is only bark samples. 
+asv.tab.its.2019.bark<-subset(asv.tab.its.2019,rownames(asv.tab.its.2019)%in%met.its.bark$Sample)
+
+# Using the rarecurve function from vegan to generate our rarefaction curves for only bark samples.
+asv.rarecurve.its.2019.bark<-vegan::rarecurve(asv.tab.its.2019.bark)
+
+sort(rowSums(asv.tab.its.2019.bark))
+
+# Generating a ggplot that displays the curves in a more aesthetically pleasing way. First we create a function that will allow us to store the Subsample attribute in a separate object. This will serve as the x-axis variable.   
+rarecurve_plotter<-function(x) attr(x,which="Subsample")
+rarecurve.attributes.its.2019.bark<-sapply(asv.rarecurve.its.2019.bark,rarecurve_plotter)
+
+library(ggplot2)
+rare_plot_bark_bac_2019<-ggplot() 
+for (i in 1:length(asv.rarecurve.its.2019.bark)){
+  rare_plot_bark_bac_2019<-rare_plot_bark_bac_2019+geom_line(aes_(x=rarecurve.attributes.its.2019.bark[[i]], y=asv.rarecurve.its.2019.bark[[i]]),size=1)
+}
+rare_plot_bark_bac_2019<-rare_plot_bark_bac_2019+
+  geom_vline(xintercept=c(10221), color="blue")+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+  panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))
+
+# Using the rrarefy function from vegan to rarefy root samples. The sample value is the number of sequences we want each sample to have following rarefaction. This is the value we have chosen based on our rarefaction curves.
+ 
+rare.asv.tab.its.2019.bark<-as.data.frame(rrarefy(asv.tab.its.2019.bark, sample=10221))
+
+#write.table(rare.asv.tab.its.2019.bark,file="/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_its_dwdmcb/rarefied_asv_tables_its/rare.asv.tab.its.2019.bark.txt",sep="\t",row.names = TRUE,col.names = TRUE)
+```
+
+```{r}
+# Using grep to subset metadata and only pull out stem samples.
+met.its.stem<-metadata_burn[grep("Stem",metadata_burn$Niche),]
+  
+# Subsetting ASV table to create a new table that is only stem samples.
+asv.tab.its.2019.stem<-subset(asv.tab.its.2019,rownames(asv.tab.its.2019)%in%met.its.stem$Sample)
+
+# Using the rarecurve function from vegan to generate our rarefaction curves for only stem associated samples.
+asv.rarecurve.its.2019.stem<-vegan::rarecurve(asv.tab.its.2019.stem)
+
+sort(rowSums(asv.tab.its.2019.stem))
+
+# Generating a ggplot that displays the curves in a more aesthetically pleasing way. First we create a function that will allow us to store the Subsample attribute in a separate object. This will serve as the x-axis variable.    
+rarecurve_plotter<-function(x) attr(x,which="Subsample")
+rarecurve.attributes.its.2019.stem<-sapply(asv.rarecurve.its.2019.stem,rarecurve_plotter)
+
+library(ggplot2)
+rare_plot_stem_bac_2019<-ggplot() 
+for (i in 1:length(asv.rarecurve.its.2019.stem)){
+  rare_plot_stem_bac_2019<-rare_plot_stem_bac_2019+geom_line(aes_(x=rarecurve.attributes.its.2019.stem[[i]], y=asv.rarecurve.its.2019.stem[[i]]),size=1)
+}
+rare_plot_stem_bac_2019<-rare_plot_stem_bac_2019+
+  geom_vline(xintercept=c(5098), color="blue")+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+  panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))
+
+# Using the rrarefy function from vegan to rarefy root samples. The sample value is the number of sequences we want each sample to have following rarefaction. This is the value we have chosen based on our rarefaction curves.
+ 
+rare.asv.tab.its.2019.stem<-as.data.frame(rrarefy(asv.tab.its.2019.stem, sample=5098))
+
+#write.table(rare.asv.tab.its.2019.stem,file="/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_its_dwdmcb/rarefied_asv_tables_its/rare.asv.tab.its.2019.stem.txt",sep="\t",row.names = TRUE,col.names = TRUE)
+```
+
+```{r}
+# Using grep to subset metadata and only pull out leaf samples.
+met.its.leaves<-metadata_burn[grep("Leaves",metadata_burn$Niche),]
+  
+# Subsetting ASV table to create a new table that is only leaf samples.
+asv.tab.its.2019.leaves<-subset(asv.tab.its.2019,rownames(asv.tab.its.2019)%in%met.its.leaves$Sample)
+
+# Using the rarecurve function from vegan to generate our rarefaction curves for only leaf associated samples
+asv.rarecurve.its.2019.leaves<-vegan::rarecurve(asv.tab.its.2019.leaves)
+
+sort(rowSums(asv.tab.its.2019.leaves))
+
+# Generating a ggplot that displays the curves in a more aesthetically pleasing way. First we create a function that will allow us to store the Subsample attribute in a separate object. This will serve as the x-axis variable. 
+rarecurve_plotter<-function(x) attr(x,which="Subsample")
+rarecurve.attributes.its.2019.leaves<-sapply(asv.rarecurve.its.2019.leaves,rarecurve_plotter)
+
+library(ggplot2)
+rare_plot_leaves_bac_2019<-ggplot() 
+for (i in 1:length(asv.rarecurve.its.2019.leaves)){
+  rare_plot_leaves_bac_2019<-rare_plot_leaves_bac_2019+geom_line(aes_(x=rarecurve.attributes.its.2019.leaves[[i]], y=asv.rarecurve.its.2019.leaves[[i]]),size=1)
+}
+rare_plot_leaves_bac_2019<-rare_plot_leaves_bac_2019+
+  geom_vline(xintercept=c(11293), color="blue")+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+  panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))
+
+# Using the rrarefy function from vegan to rarefy root samples. The sample value is the number of sequences we want each sample to have following rarefaction. This is the value we have chosen based on our rarefaction curves.
+ 
+rare.asv.tab.its.2019.leaves<-as.data.frame(rrarefy(asv.tab.its.2019.leaves, sample=11293))
+
+#write.table(rare.asv.tab.its.2019.leaves,file="/Volumes/Beant_Kapoor/sequence_processing/raw_sequence_data_its_dwdmcb/rarefied_asv_tables_its/rare.asv.tab.its.2019.leaves.txt",sep="\t",row.names = TRUE,col.names = TRUE)
+
+```
+
+
+```{r}
+# Using ggarrange to organize rarefaction plots into a single figure for publication.
+rarefaction_curves_its_2019<-ggarrange(rare_plot_all_its_2019,rare_plot_soil_bac_2019,rare_plot_roots_bac_2019,rare_plot_bark_bac_2019,rare_plot_stem_bac_2019,rare_plot_leaves_bac_2019,nrow=3,ncol=2,labels = c("A","B","C","D","E","F"))
+
+#ggsave('/Volumes/Beant_Kapoor/Kapoor et al 2021 - Dogwood microbiome manuscript_ver14_AJOEDITS/rarefaction_curves_its_figA.1.tiff',plot = rarefaction_curves_its_2019,width = 10,height=10)
+
+
+```

@@ -1,0 +1,589 @@
+---
+title: "ITS_bark"
+author: "Beant Kapoor"
+date: "3/23/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+### General Comment - Objects in this file contain the name 'otu' however they represent ASV in this case.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Import Data and Subset}
+#So we will be working with two dataframes 'seqtab_nochim' which is our ASV count table and 'taxa' which is our taxonomy table. First of all we have to make sure that column names in seqtab_nochim dataframe align correctly with the rownames of taxa dataframe.
+dim(seqtab_nochim) #There are 218 rows (samples) and 13205 columns (ASVs)
+dim(taxa) #There are 13205 rows (ASVs) and 7 columns (Taxa levels)
+
+#Next I import the metadata for the particular habitat of interest. In this case I am working with bark. I will use this metadata to subset the larger OTU file above.
+bark_metadata <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_bark.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+sample_name_bark <- bark_metadata$Sample
+
+#Here I use the subset function to pull out just the samples belonging to bark.
+bark_asv <- subset(seqtab_nochim, rownames(seqtab_nochim) %in% sample_name_bark)
+
+#Let's check that the previous function worked okay. The resulting table should have 40 rows and 13205 columns
+dim(bark_asv) #BRAVO!
+
+#Let's clean the table further. Here we are removing any ASVs which are not present in any of the samples. What the below function is doing is summing the columns (ASVs) and any ASV that equals 0 is removed from the dataset. This will hopefully speed up downstream analyses.
+bark_pure <- bark_asv[, colSums(bark_asv) > 0]
+dim(bark_pure) #40 rows and 2767 ASVs
+```
+
+```{r Rarefaction}
+#Below I create the rarefaction curves for each sample using the rarecurve function from vegan.
+library(vegan)
+rare_curve_bark <- rarecurve(bark_pure)
+
+#I then create an object that spans the range of the ESV richness. This will be used to plot the vertical line in my ggplot rarefaction curve. 
+f_bark<-(0:12500)
+
+#I then create objects containing the x and y coordinates values for each stratum.
+sequences_bark40<-attr(rare_curve_bark[[40]],which="Subsample")
+sequences_bark39<-attr(rare_curve_bark[[39]],which="Subsample")
+sequences_bark38<-attr(rare_curve_bark[[38]],which="Subsample")
+sequences_bark37<-attr(rare_curve_bark[[37]],which="Subsample")
+sequences_bark36<-attr(rare_curve_bark[[36]],which="Subsample")
+sequences_bark35<-attr(rare_curve_bark[[35]],which="Subsample")
+sequences_bark34<-attr(rare_curve_bark[[34]],which="Subsample")
+sequences_bark33<-attr(rare_curve_bark[[33]],which="Subsample")
+sequences_bark32<-attr(rare_curve_bark[[32]],which="Subsample")
+sequences_bark31<-attr(rare_curve_bark[[31]],which="Subsample")
+sequences_bark30<-attr(rare_curve_bark[[30]],which="Subsample")
+sequences_bark29<-attr(rare_curve_bark[[29]],which="Subsample")
+sequences_bark28<-attr(rare_curve_bark[[28]],which="Subsample")
+sequences_bark27<-attr(rare_curve_bark[[27]],which="Subsample")
+sequences_bark26<-attr(rare_curve_bark[[26]],which="Subsample")
+sequences_bark25<-attr(rare_curve_bark[[25]],which="Subsample")
+sequences_bark24<-attr(rare_curve_bark[[24]],which="Subsample")
+sequences_bark23<-attr(rare_curve_bark[[23]],which="Subsample")
+sequences_bark22<-attr(rare_curve_bark[[22]],which="Subsample")
+sequences_bark21<-attr(rare_curve_bark[[21]],which="Subsample")
+sequences_bark20<-attr(rare_curve_bark[[20]],which="Subsample")
+sequences_bark19<-attr(rare_curve_bark[[19]],which="Subsample")
+sequences_bark18<-attr(rare_curve_bark[[18]],which="Subsample")
+sequences_bark17<-attr(rare_curve_bark[[17]],which="Subsample")
+sequences_bark16<-attr(rare_curve_bark[[16]],which="Subsample")
+sequences_bark15<-attr(rare_curve_bark[[15]],which="Subsample")
+sequences_bark14<-attr(rare_curve_bark[[14]],which="Subsample")
+sequences_bark13<-attr(rare_curve_bark[[13]],which="Subsample")
+sequences_bark12<-attr(rare_curve_bark[[12]],which="Subsample")
+sequences_bark11<-attr(rare_curve_bark[[11]],which="Subsample")
+sequences_bark10<-attr(rare_curve_bark[[10]],which="Subsample")
+sequences_bark9<-attr(rare_curve_bark[[9]],which="Subsample")
+sequences_bark8<-attr(rare_curve_bark[[8]],which="Subsample")
+sequences_bark7<-attr(rare_curve_bark[[7]],which="Subsample")
+sequences_bark6<-attr(rare_curve_bark[[6]],which="Subsample")
+sequences_bark5<-attr(rare_curve_bark[[5]],which="Subsample")
+sequences_bark4<-attr(rare_curve_bark[[4]],which="Subsample")
+sequences_bark3<-attr(rare_curve_bark[[3]],which="Subsample")
+sequences_bark2<-attr(rare_curve_bark[[2]],which="Subsample")
+sequences_bark1<-attr(rare_curve_bark[[1]],which="Subsample")
+
+#Here I plot the rarefaction curves. 
+
+library(ggplot2)
+library(ggpubr)
+
+rarefaction_chart_bark <- ggplot() +
+  geom_line(aes(x=sequences_bark40,y=rare_curve_bark[[40]]),size=1)+
+  geom_line(aes(x=sequences_bark39,y=rare_curve_bark[[39]]), size=1)+
+  geom_line(aes(x=sequences_bark38,y=rare_curve_bark[[38]]),size=1)+
+  geom_line(aes(x=sequences_bark37,y=rare_curve_bark[[37]]),size=1)+
+  geom_line(aes(x=sequences_bark36,y=rare_curve_bark[[36]]),size=1)+
+  geom_line(aes(x=sequences_bark35,y=rare_curve_bark[[35]]),size=1)+
+  geom_line(aes(x=sequences_bark34,y=rare_curve_bark[[34]]), size=1)+
+  geom_line(aes(x=sequences_bark33,y=rare_curve_bark[[33]]), size=1)+
+  geom_line(aes(x=sequences_bark32,y=rare_curve_bark[[32]]),size=1)+
+  geom_line(aes(x=sequences_bark31,y=rare_curve_bark[[31]]),size=1 )+
+  geom_line(aes(x=sequences_bark30,y=rare_curve_bark[[30]]),size=1)+
+  geom_line(aes(x=sequences_bark29,y=rare_curve_bark[[29]]),size=1)+
+  geom_line(aes(x=sequences_bark28,y=rare_curve_bark[[28]]),size=1)+
+  geom_line(aes(x=sequences_bark27,y=rare_curve_bark[[27]]),size=1)+
+  geom_line(aes(x=sequences_bark26,y=rare_curve_bark[[26]]),size=1)+
+  geom_line(aes(x=sequences_bark25,y=rare_curve_bark[[25]]), size=1)+
+  geom_line(aes(x=sequences_bark24,y=rare_curve_bark[[24]]),size=1)+
+  geom_line(aes(x=sequences_bark23,y=rare_curve_bark[[23]]),size=1)+
+  geom_line(aes(x=sequences_bark22,y=rare_curve_bark[[22]]),size=1)+
+  geom_line(aes(x=sequences_bark21,y=rare_curve_bark[[21]]),size=1)+
+  geom_line(aes(x=sequences_bark20,y=rare_curve_bark[[20]]),size=1)+
+  geom_line(aes(x=sequences_bark19,y=rare_curve_bark[[19]]), size=1)+
+  geom_line(aes(x=sequences_bark18,y=rare_curve_bark[[18]]),size=1)+
+  geom_line(aes(x=sequences_bark17,y=rare_curve_bark[[17]]),size=1)+
+  geom_line(aes(x=sequences_bark16,y=rare_curve_bark[[16]]),size=1)+
+  geom_line(aes(x=sequences_bark15,y=rare_curve_bark[[15]]),size=1)+
+  geom_line(aes(x=sequences_bark14,y=rare_curve_bark[[14]]), size=1)+
+  geom_line(aes(x=sequences_bark13,y=rare_curve_bark[[13]]), size=1)+
+  geom_line(aes(x=sequences_bark12,y=rare_curve_bark[[12]]),size=1)+
+  geom_line(aes(x=sequences_bark11,y=rare_curve_bark[[11]]),size=1 )+
+  geom_line(aes(x=sequences_bark10,y=rare_curve_bark[[10]]),size=1)+
+  geom_line(aes(x=sequences_bark9,y=rare_curve_bark[[9]]),size=1)+
+  geom_line(aes(x=sequences_bark8,y=rare_curve_bark[[8]]),size=1)+
+  geom_line(aes(x=sequences_bark7,y=rare_curve_bark[[7]]),size=1)+
+  geom_line(aes(x=sequences_bark6,y=rare_curve_bark[[6]]),size=1)+
+  geom_line(aes(x=sequences_bark5,y=rare_curve_bark[[5]]), size=1)+
+  geom_line(aes(x=sequences_bark4,y=rare_curve_bark[[4]]),size=1)+
+  geom_line(aes(x=sequences_bark3,y=rare_curve_bark[[3]]),size=1)+
+  geom_line(aes(x=sequences_bark2,y=rare_curve_bark[[2]]),size=1)+
+  geom_line(aes(x=sequences_bark1,y=rare_curve_bark[[1]]),size=1)+
+  geom_path(aes(x=12184,y=f_bark), linetype=5)+
+  ylim(0, 500)+
+  xlim(0, 100000)+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+       panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))+
+  labs(title = 'Bark ITS')
+
+ggsave(filename = "bark_ITS_rarefaction.curve.png", path = "/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results", rarefaction_chart_bark, dpi = 300, width = 5, height = 5, units = 'in')
+
+#Here we are rarefying the data using the rrarefy function from vegan. I first use the sort function to determine the lowest number of sequences in a sample. 
+sort(rowSums(bark_pure)) #We will rrarefy to 12184 and we will lose one sample as it had only 4 sequences - 18CF723ITS
+
+#Then using the rrarefy function from vegan, I rarefy my samples. The rarefaction cutoff or "sample" value is determined by evaluating my rarefaction curves and choosing the number of sequences that minimizes sample loss but maximizes sampling depth.
+rare_otu_bark <- as.data.frame(rrarefy(bark_pure, sample = 12184))
+
+#As rrarefy function does not kick out sample itself we have to do it ourselves
+rare_otu_bark <- rare_otu_bark[rowSums(rare_otu_bark) >= 12184, ]
+
+#I am now removing ASVs present in the ASV table that were only present in samples removed following rarefaction. These ASVs will have column sums of 0.
+rare_otu_bark <- rare_otu_bark[, colSums(rare_otu_bark) > 0]
+
+#The following line is for saving the rarefied ASV table. This file is later reloaded to be used in downstream analyses. This is done to maintain consistency of results because rarefying generates slightly different results each time.
+write.table(rare_otu_bark, "/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Tables_from_R/ITS_bark_rarefied_asv.shared", sep = '\t', row.names = TRUE, col.names = TRUE)
+
+#I am now removing singleton ASVs (ASVs with only 1 representative sequence following rarefaction). This is to limit the effects of rare species on our distance matrices used during ordination.  
+rare_otu_bark_no_singletons <- rare_otu_bark[, colSums(rare_otu_bark) > 1]
+
+#The following line is for saving the rarefied ASV table with singletons removed. This file is later reloaded to be used in downstream analyses. This is done to maintain consistency of results because rarefying generates slightly different results each time.
+write.table(rare_otu_bark_no_singletons, "/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Tables_from_R/ITS_bark_rarefied_no_singletons.shared", sep = '\t', row.names = TRUE, col.names = TRUE)
+```
+
+```{r Relative abundance Chart - Phylum}
+#Now that samples have been rarefied I can perform alpha and beta diversity analyses on my data sets. To begin I first reformat my ASV table so that I can do some filtering and add taxonomy information.
+rare_otu_bark_no_singletons <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Tables_from_R/ITS_bark_rarefied_no_singletons.shared", header = TRUE, sep = '\t')
+
+#I now transpose my ASV table so that I can begin to add in taxonomy information.
+trans_otu_bark <- as.data.frame(t(rare_otu_bark_no_singletons))
+
+#The below function is asking specifically for the ASV sequences in the bark ASV table. These are the row names. I will use these to subset the taxa file.
+bark_otu_names <- rownames(trans_otu_bark)
+bark_taxonomy <- subset(taxa, rownames(taxa) %in% bark_otu_names)
+
+#Let's duplicate the above object and then we will display the new object without the rownames as they are long sequences.
+bark_taxonomy_print <- bark_taxonomy 
+rownames(bark_taxonomy_print) <- NULL
+head(bark_taxonomy_print) #Good job
+
+#By inspecting the dataframe 'bark_taxonomy_print' we found out that we have to clean the taxonomy names. We will do this using regex.
+bark_taxonomy_print <- gsub(pattern = "^\\w__", replacement = "", x = bark_taxonomy_print)
+head(bark_taxonomy_print)
+# Hooooohooo! That's a success! Now we can apply the same function to 'bark_taxonomy'
+
+bark_taxonomy <- gsub(pattern = "^\\w__", replacement = "", x = bark_taxonomy)
+head(bark_taxonomy)
+
+#Now the two dataframes 'bark_taxanomy' and 'trans_otu_bark' are ready to be merged.
+bark_otu_taxonomy <- merge(bark_taxonomy, trans_otu_bark, by = 0)
+
+#We can get rid of the first column as they are already the rownames for the dataframe
+bark_otu_taxonomy <- bark_otu_taxonomy[, 2:47] #BEAUTIFUL!!!!
+
+#Let's create a dataframe which only consists of only the phylum column and the rarefied ASV table
+bark_otu_phylum <- bark_otu_taxonomy[, c(2, 8:46)] #I am on fire today!
+
+#My guess is down the road we don't really need the rownames so why not get rid of them already. They are making me crazy right now. If we will really need those names we can always come back and rerun the code. Let's do it.
+rownames(bark_otu_phylum) <- seq(1, nrow(bark_otu_phylum), by = 1) #Good job, it's so much cleaner.
+
+#Get rid of the rows where phylum assignments which are NAs. The resulting dataframes should have 2936 rows.
+bark_otu_phylum <- bark_otu_phylum[complete.cases(bark_otu_phylum), ]
+rownames(bark_otu_phylum) <- seq(1, nrow(bark_otu_phylum), by = 1)
+
+#The following code is for the generation of phylum relative abundance stacked bar charts. I first sum each ASV by the phylum it belongs to. 
+library(dplyr)
+bark_summed_otu_phylum <- as.data.frame(bark_otu_phylum %>% group_by(Phylum) %>% summarise_each(funs(sum)))
+rownames(bark_summed_otu_phylum) <- make.names(bark_summed_otu_phylum$Phylum)
+bark_summed_otu_phylum <- bark_summed_otu_phylum[, 2:40]
+
+#I then transpose the data frame so that sample names are now row names and column names are OTU names.
+trans_bark_otu_summed_phylum <- as.data.frame(t(bark_summed_otu_phylum))
+
+#Read in a new metadata file for bark to make relative abundance charts
+bark_metadata_for_rel_abund <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_bark_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+trans_bark_phylum_metadata <- merge(bark_metadata_for_rel_abund, trans_bark_otu_summed_phylum, by.x = 1, by.y = 0)
+rownames(trans_bark_phylum_metadata) <- make.names(trans_bark_phylum_metadata$Sample)
+trans_bark_phylum_metadata <- trans_bark_phylum_metadata[, 2:10]
+rownames(trans_bark_phylum_metadata) <- sub('X', '', rownames(trans_bark_phylum_metadata))
+
+#I then sum each OTU by Treatment column and subset to exclude sample names. This is because the following functions only work on matrices containing numeric data.
+bark_phylum_summed_treatment <- as.data.frame(trans_bark_phylum_metadata %>% group_by(Treatment) %>% summarise_each(funs(sum)))
+bark_phylum <- bark_phylum_summed_treatment[, 2:9]
+
+#As there are only 8 phylas in bark dataset we do not really need to make on Other category.
+
+#These values are then converted to relative abundance using the decostand function from vegan. 
+library(vegan)
+bark_phylum_rel_abund <- decostand(bark_phylum_summed_treatment[, 2:9], method = 'total')
+bark_phylum_rel_abund <- data.frame(Treatment = bark_phylum_summed_treatment$Treatment, bark_phylum_rel_abund)
+
+#Below I use the melt function from the data.table package to reformat the data into stacked bar graph format. 
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(RColorBrewer)
+bark_phylum_melt <- melt(bark_phylum_rel_abund, id.vars = 'Treatment', variable.name = 'Phylum')
+bark_colors_n_phylum <- length(unique(bark_phylum_melt[, 'Phylum']))
+bark_phylum_melt$Treatment <- as.character(bark_phylum_melt$Treatment)
+bark_phylum_melt$Treatment <- factor(bark_phylum_melt$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results/ITS_bark_relative_abundance_phylum.tiff", units = 'in', width = 7, height = 7, res = 200)
+bark_rel_phylum <- ggplot(bark_phylum_melt, aes(x = Treatment, y = value, fill = Phylum))+
+  geom_bar(stat = 'identity', show.legend = TRUE, color = 'black')+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(bark_colors_n_phylum))+
+  xlab('Bark')+
+  ylab('Relative Abundance')+
+  ggtitle('ITS Bark at phylum level')+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 14, color = 'black', angle = 90), axis.ticks.x = element_blank(), axis.text.y = element_text(size = 14), axis.line.y.left = element_line(), axis.title.y = element_text(size = 16))
+dev.off()
+```
+
+# The following chunk creates a relative abundance chart at the class level.
+
+```{r Relative abundance chart - Class}
+library(plyr)
+bark_otu_class <- bark_otu_taxonomy[, c(3, 8:46)]
+
+#Get rid of the rows where class assignments are NAs. The resulting dataframe should have 2644 rows.
+bark_otu_class <- bark_otu_class[complete.cases(bark_otu_class), ]
+
+#Using dplyr approach to sum each class assignment together
+bark_summed_otu_class <- as.data.frame(bark_otu_class %>% group_by(Class) %>% summarise_each(funs(sum)))
+rownames(bark_summed_otu_class) <- make.names(bark_summed_otu_class$Class)
+bark_summed_otu_class <- bark_summed_otu_class[, 2:40]
+
+#I then transpose the data frame so that sample names are now row names and column names are Class names.
+trans_bark_otu_summed_class <- as.data.frame(t(bark_summed_otu_class))
+
+#Read in a new metadata file for bark to make relative abundance charts
+bark_metadata_for_rel_abund <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_bark_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+trans_bark_class_metadata <- merge(bark_metadata_for_rel_abund, trans_bark_otu_summed_class, by.x = 1, by.y = 0)
+
+#After this point we don't really need the sample names column so we will delete it
+trans_bark_class_metadata <- trans_bark_class_metadata[, 2:38]
+
+#I then sum each Class by Treatment column and subset to exclude sample names. This is because the following functions only work on matrices containing numeric data.
+bark_class_summed_treatment <- as.data.frame(trans_bark_class_metadata %>% group_by(Treatment) %>% summarise_each(funs(sum)))
+bark_class <- bark_class_summed_treatment[, 2:37]
+
+#I am now creating an other category. Other includes those OTUs belonging to a class that comprises less than 1% of the total community. This new object is reffered to as class_others.
+bark_class_others <- bark_class[, colSums(bark_class)/sum(bark_class) <= 0.01]
+bark_class_others_sum <- rowSums(bark_class_others)
+
+#I then create an object that contains all of the classes that comprise more than 1% of the total community.
+bark_class_regular <- bark_class[, colSums(bark_class)/sum(bark_class) > 0.01]
+
+#I then create a dataframe containing the treatment information, the Other column and the remaining phyla
+bark_class_reg_others <- data.frame(Treatment = bark_class_summed_treatment$Treatment, bark_class_regular, Others = bark_class_others_sum)
+
+#These values are then converted to relative abundance using the decostand function from vegan. 
+library(vegan)
+bark_class_rel_abund <- decostand(bark_class_reg_others[, 2:9], method = 'total')
+bark_class_rel_abund <- data.frame(Treatment = bark_class_reg_others$Treatment, bark_class_rel_abund)
+
+#Below I use the melt function from the data.table package to reformat the data into stacked bar graph format. 
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(RColorBrewer)
+bark_class_melt <- melt(bark_class_rel_abund, id.vars = 'Treatment', variable.name = 'class')
+bark_colors_n_class <- length(unique(bark_class_melt[, 'class']))
+bark_class_melt$Treatment <- as.character(bark_class_melt$Treatment)
+bark_class_melt$Treatment <- factor(bark_class_melt$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results/ITS_bark_relative_abundance_class.tiff", units = 'in', width = 7, height = 7, res = 200)
+bark_rel_class <- ggplot(bark_class_melt, aes(x = Treatment, y = value, fill = class))+
+  geom_bar(stat = 'identity', show.legend = TRUE, color = 'black')+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(bark_colors_n_class))+
+  xlab('Bark')+
+  ylab('Relative Abundance')+
+  ggtitle('ITS Bark at class level')+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 14, color = 'black', angle = 90), axis.ticks.x = element_blank(), axis.text.y = element_text(size = 14), axis.line.y.left = element_line(), axis.title.y = element_text(size = 16))
+dev.off()
+
+#Let's join the relative abundance charts at phylum level and class level together
+tiff(filename = "/Volumes/Beant_Kapoor/ITS_analysis_R/Bark_ITS/Results/ITS_bark_phylum_class_rel_abund.tiff", units = 'in', width = 13, height = 7, res = 200)
+ggarrange(bark_rel_phylum, bark_rel_class, nrow = 1, labels = c("I", "II"), align = 'h')
+dev.off()
+```
+
+# The following code is used to generate the Principal Coordinate Analysis chart
+
+```{r Principal Coordinate Analyses}
+rare_otu_bark_no_singletons_its <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/Bark_ITS/Tables_from_R/ITS_bark_rarefied_no_singletons.shared", header = TRUE, sep = '\t')
+
+bark_metadata_for_rel_abund_its <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_bark_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+
+#We will start with the object named 'rare_otu_bark_no_singletons'
+library(vegan)
+rare_bark_rel_abund_for_pcoa_its <- decostand(rare_otu_bark_no_singletons_its, method = 'total')
+
+#Need to load the library 'ape' and use the vegdist function to create a dissimilarity matrix using the Bray Curtis distance
+library(ape)
+bark_dist_its <- vegdist(rare_bark_rel_abund_for_pcoa_its, method = 'bray')
+bark_pcoa_its <- pcoa(bark_dist_its)
+bark_pcoa_vectors_its <- as.data.frame(bark_pcoa_its$vectors)
+bark_pcoa_vectors_metadata_its <- merge(bark_metadata_for_rel_abund_its, bark_pcoa_vectors_its, by.x = 1, by.y = 0)
+biplot(bark_pcoa_its, plot.axes = c(1, 2))
+bark_pcoa_scores_its <- data.frame(PC1 = bark_pcoa_vectors_its$Axis.1, PC2 = bark_pcoa_vectors_its$Axis.2)
+bark_pcoa_ellipse_its <- ordiellipse(bark_pcoa_scores_its, bark_pcoa_vectors_metadata_its$Treatment)
+
+#Plot the eigenvalues and interpret
+barplot(bark_pcoa_its$values$Relative_eig[1:10])
+
+# Find out the percentage variance explained by the first two principal axes
+bark_pcoa_its$values$Relative_eig[1] * 100 #9.46
+bark_pcoa_its$values$Relative_eig[2] * 100 #8.44
+
+#Extract the plot scores from first two PCoA axes
+bark_pcoa_axes_its <- bark_pcoa_its$vectors[, c(1, 2)]
+
+#In order to change the color scheme of PCoA we will have to add one more column to the dataframe 'bark_pcoa_vectors_metadata'
+bark_treatment_pcoa_color_its <- c('Burn_B', 'Burn_B','Burn_B','Burn_B','Burn_B', 'Burn_C', 'Burn_C','Burn_C','Burn_C','Burn_C', 'Control_D','Control_D','Control_D','Control_D', 'Control_D', 'Control_A','Control_A','Control_A','Control_A', 'Burn_B', 'Burn_B','Burn_B','Burn_B','Burn_B', 'Burn_C', 'Burn_C','Burn_C','Burn_C','Burn_C', 'Control_D', 'Control_D','Control_D','Control_D','Control_D', 'Control_A', 'Control_A','Control_A','Control_A','Control_A')
+bark_pcoa_vectors_metadata_its <- data.frame(Treatment_color = bark_treatment_pcoa_color_its, bark_pcoa_vectors_metadata_its)
+
+year_permanova_bark_its <- c("2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019")
+
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results/ITS_bark_PCOA.tiff", units = 'in', width = 10, height = 7, res = 200)
+bark_pcoa_its <- ggplot(bark_pcoa_scores_its, aes(PC1, PC2, color = bark_pcoa_vectors_metadata_its$Treatment_color))+
+  geom_point(size = 2, aes(shape = year_permanova_bark_its))+
+  labs(shape = 'Year')+
+  ggtitle('Bark ITS')+
+  xlab('Principal Axis 1 (9.46%)')+
+  xlim(c(-0.6, 0.6))+
+  ylab('Principal Axis 2 (8.44%)')+
+  theme_linedraw()+
+  #scale_color_discrete(name = 'Niches')+
+  theme(plot.title = element_text(family = 'Arial', size=12, face="bold"))+
+  theme(axis.title.x=element_text(family = 'Arial', size=10))+
+  theme(axis.title.y=element_text(family = 'Arial', size=10))+
+  theme(axis.text.x=element_text(family = 'Arial', size=10))+
+  theme(axis.text.y=element_text(family = 'Arial', size=10))+
+  theme(legend.title = element_text(family = 'Arial', face = 'bold', size = 14))+
+  theme(legend.text = element_text(size = 14, family = 'Arial'))+
+  scale_color_brewer(palette = 'Set1', name = 'Treatment')
+dev.off()
+```
+
+# The purpose of this code is to do PERMANOVA on the WHOLE data
+
+```{r}
+# PERMANOVA without plot information
+treatment_bark_whole <- c("Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control","Control","Control","Control","Control","Control","Control","Control","Control","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control","Control","Control","Control","Control","Control","Control","Control","Control","Control")
+
+year_permanova_bark <- c("2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019")
+
+bark_permanova_whole <- adonis(rare_bark_rel_abund_for_pcoa~treatment_bark_whole + year_permanova_bark + treatment_bark_whole * year_permanova_bark, method = 'bray', permutations = 10000)
+bark_permanova_whole
+
+bark_plot <- c("B","B","B","B","B","C","C","C","C","C","D","D","D","D","D","A","A","A","A","B","B","B","B","B","C","C","C","C","C","D","D","D","D","D","A","A","A","A","A")
+
+#PERMANOVA with plot information
+bark_permanova_whole_plot <- adonis(rare_bark_rel_abund_for_pcoa ~ treatment_bark_whole +  year_permanova_bark + bark_plot + treatment_bark_whole * year_permanova_bark * bark_plot, method = 'bray', permutations = 10000)
+bark_permanova_whole_plot
+```
+
+# The purpose of the following chunk is to create Shannon Alpha diversity boxplots across treatments
+
+```{r Alpha Diversity}
+# We will calculate alpha diversity of the bark microbial communities using the diversity function from the vegan package. We are going to work with the 'rare_otu_bark' because the structure of this dataset behaves as vegan community matrix data.
+bark_alpha_diversity <- as.data.frame(diversity(rare_otu_bark, index = 'shannon'))
+
+# Let's add treatment and year columns to the bark_alpha_diversity dataframe
+treatment_bark_whole
+year_permanova_bark
+bark_alpha_diversity_treatment <- data.frame(Treatment = treatment_bark_whole, Year = year_permanova_bark, bark_alpha_diversity)
+colnames(bark_alpha_diversity_treatment)[3] <- 'Shannon_alpha_diversity'
+
+#Write this dataframe to the csv file
+write.csv(bark_alpha_diversity_treatment, file = "/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Tables_from_R/ITS_bark_shannon.csv")
+
+#Adding in the metadata for graph
+bark_alpha_metadata <- merge(bark_metadata_for_rel_abund, bark_alpha_diversity, by.x = 1, by.y = 0)
+rownames(bark_alpha_metadata) <- make.names(bark_alpha_metadata$Sample)
+bark_alpha_metadata <- bark_alpha_metadata[, 2:3]
+rownames(bark_alpha_metadata) <- sub('X', '', rownames(bark_alpha_metadata))
+bark_alpha_metadata$Treatment <- as.character(bark_alpha_metadata$Treatment)
+bark_alpha_metadata$Treatment <- factor(bark_alpha_metadata$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+colnames(bark_alpha_metadata)[2] <- 'shannon_index'
+
+#Let's make the graph now
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results/ITS_bark_alpha_shannon_index.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggplot(bark_alpha_metadata, aes(x = Treatment, y = shannon_index, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('bark ITS Alpha Diversity')+
+  ylab('Shannon Diversity Index')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#We have to make one more chart without legend
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results/ITS_bark_alpha_shannon_index_without_legend.tiff", units = 'in', width = 10, height = 7, res = 200)
+bark_alpha_without_legend <- ggplot(bark_alpha_metadata, aes(x = Treatment, y = shannon_index, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Bark ITS Alpha Diversity')+
+  ylab('Shannon Index')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  theme(legend.position = 'none')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+```
+
+# As suggested by Dr. Cregger, the purpose of this code is to generate hill number analysis
+
+```{r Hill Number}
+# install iNEXT from github
+install.packages('devtools')
+library(devtools) 
+install_github('JohnsonHsieh/iNEXT')
+
+# import packages library(iNEXT) library(ggplot2)
+library(iNEXT) 
+library(ggplot2)
+
+# Transposing the dataframe 'bark_pure' to convert it into the format the package 'iNEXT' wants it to be
+trans_bark_pure <- as.data.frame(t(bark_pure))
+
+#The rownames of the above dataframe are the sequences of the ASVs. We don't really require these in our downstream analysis so it's better to get rid of them as they make it harder to display and explore the dataframe.
+rownames(trans_bark_pure) <- NULL
+
+#Now the dataframe is ready for the hill number analysis. We will use the basic function iNEXT.
+bark_hill <- iNEXT(trans_bark_pure, q = c(0, 1, 2), datatype = "abundance")
+```
+
+# The purpose of the following code is generate the boxplots for richness values and find differences across treatments
+
+```{r}
+library(vegan)
+bark_richness <- specnumber(rare_otu_bark)
+bark_richness_df <- data.frame(bark_alpha_metadata, Richness = bark_richness)
+bark_richness_df <- bark_richness_df[, -2]
+bark_richness_df$Treatment <- as.character(bark_richness_df$Treatment)
+bark_richness_df$Treatment <- factor(bark_richness_df$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+plot_tree_bark <- c("B_1", "B_2","B_3","B_4","B_5", "C_1", "C_2","C_3","C_4","C_5", "D_1", "D_2", "D_3", "D_4", "D_5", "A_1","A_3","A_4","A_5","B_1", "B_2","B_3","B_4","B_5", "C_1", "C_2","C_3","C_4","C_5", "D_1", "D_2", "D_3", "D_4", "D_5", "A_1", "A_2","A_3","A_4","A_5")
+
+#The following code is for the anova of richness values
+bark_richness_metadata <- data.frame(Plot = plot_tree_bark, Year = year_permanova_bark, Treatment = treatment_bark_whole, Richness = bark_richness)
+
+#Order factors by order in dataframe, otherwise, R will alphabetize them
+bark_richness_metadata$Treatment <- factor(bark_richness_metadata$Treatment, levels = unique(bark_richness_metadata$Treatment))
+
+#Make the Year column numeric
+bark_richness_metadata$Year <- as.numeric(bark_richness_metadata$Year)
+
+#Code for the analysis
+library(nlme)
+bark_model_richness <- lme(Richness ~ Treatment + Year + Treatment*Year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = bark_richness_metadata, method = "REML")
+library(car)
+Anova(bark_model_richness)
+
+# This is the graph with legend
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results/ITS_bark_richness.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggplot(bark_richness_df, aes(x = Treatment, y = Richness, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Bark ITS Richness')+
+  ylab('ASV Richness')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Let's make the graph without legend
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results/ITS_bark_richness_without_legend.tiff", units = 'in', width = 8, height = 7, res = 200)
+bark_richness_chart_without_legend <- ggplot(bark_richness_df, aes(x = Treatment, y = Richness, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Bark ITS Richness')+
+  ylab('ASV Richness')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  theme(legend.position = 'none')+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Now let's combine the alpha diversity and richness chart using ggarrange
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/bark_ITS/Results/ITS_bark_richness_and_shannon.tiff", units = 'in', height = 10, width = 8, res = 300)
+ggarrange(bark_richness_chart_without_legend + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()), bark_alpha_without_legend,  ncol = 1, labels = c("I", "II"), align = 'v', hjust = -3)
+dev.off()
+```
+
+#The purpose of this code chunk is to find differences in shannon alpha diversity across treatments.
+
+```{r Differences in shannon index}
+#We will start with object 'bark_alpha_diversity_treatment' and add one more column to it and that is plot information
+bark_plot_shannon <- data.frame(Plot = plot_tree_bark, Year = year_permanova_bark, Treatment = treatment_bark_whole, bark_alpha_metadata)
+bark_plot_shannon <- bark_plot_shannon[, -4]
+colnames(bark_plot_shannon)[4] <- "Shannon_index"
+
+#Install required packages if they are not already installed
+if(!require(psych)){install.packages("psych")}
+if(!require(nlme)){install.packages("nlme")}
+if(!require(car)){install.packages("car")}
+if(!require(multcompView)){install.packages("multcompView")}
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(ggplot2)){install.packages("ggplot2")}
+if(!require(rcompanion)){install.packages("rcompanion")}
+
+#Order factors by order in dataframe, otherwise, R will alphabetize them
+bark_plot_shannon$Treatment <- factor(bark_plot_shannon$Treatment, levels = unique(bark_plot_shannon$Treatment))
+
+#Convert the Year column to numeric
+bark_plot_shannon$Year <- as.numeric(bark_plot_shannon$Year)
+
+#Code for the analysis
+library(nlme)
+bark_model_alpha_diversity <- lme(Shannon_index ~ Treatment + Year + Treatment*Year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = bark_plot_shannon, method = "REML")
+library(car)
+Anova(bark_model_alpha_diversity)
+```

@@ -1,0 +1,79 @@
+---
+title: "weather_sampling_time"
+author: "Beant Kapoor"
+date: "3/1/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(lubridate) # for working with dates
+library(ggplot2)  # for creating graphs
+library(scales)   # to access breaks/formatting functions
+library(gridExtra) # for arranging plots
+library(readxl)
+library(ggpubr)
+```
+
+```{r load data and}
+data_2018 <- read_excel("2018-tulahoma-weather-DAYMET-003-results.xlsx")
+data_2019 <- read_excel("2019-tulahoma-weather-DAYMET-003-results.xlsx")
+```
+
+```{r analyze}
+# add another column of average temp
+data_2018$avg_temp <- (data_2018$DAYMET_003_tmax + data_2018$DAYMET_003_tmin)/2
+data_2019$avg_temp <- (data_2019$DAYMET_003_tmax + data_2019$DAYMET_003_tmin)/2
+
+# extract data
+temp_18 <- data_2018$avg_temp
+temp_19 <- data_2019$avg_temp
+
+prec_18 <- data_2018$DAYMET_003_prcp
+prec_19 <- data_2019$DAYMET_003_prcp
+
+# t-test on avg temp
+t.test(temp_18, temp_19)
+
+# t-test on precipitation
+t.test(prec_18, prec_19)
+```
+
+```{r precipitation figure}
+# add a sequence column to both 2018 and 2019 date for date
+data_2018$series <- seq(1, 30)
+data_2019$series <- seq(1, 30)
+
+m1 <- ggplot(data_2018, aes(series, DAYMET_003_prcp)) +
+  geom_bar(stat = "identity") +
+  #ggtitle("Precipitation Sep 2018") +
+  xlab("Sep 2018") +
+  #ylab("Precipitation (mm)") +
+  theme(axis.title.y = element_blank())
+m1
+
+m2 <- ggplot(data_2019, aes(series, DAYMET_003_prcp)) +
+  geom_bar(stat = "identity") +
+  ylim(c(0, 40)) +
+  xlab("Sep 2019") +
+  #ggtitle("Precipitation Sep 2019") +
+  theme(axis.title.y = element_blank())
+  #ylab("Precipitation (mm)")
+m2
+
+# arrange the figures
+grid.arrange(m1, m2, ncol = 2, nrow = 1,
+             left = text_grob("Precipitation (mm)", rot = 90),
+             bottom = text_grob("Day of the month"))
+
+# save figure
+tiff("precipitation_tullahoma_ver1.tiff",units = "in", height = 6, width = 8, res = 250)
+grid.arrange(m1, m2, ncol = 2, nrow = 1,
+             left = text_grob("Precipitation (mm)", rot = 90),
+             bottom = text_grob("Day of the month"))
+dev.off()
+```
+
+

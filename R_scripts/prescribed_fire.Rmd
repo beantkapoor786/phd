@@ -1,0 +1,82 @@
+---
+title: "Prescribed fire"
+author: "Beant Kapoor"
+date: "3/1/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load packages and data}
+library(lubridate) # for working with dates
+library(ggplot2)  # for creating graphs
+library(scales)   # to access breaks/formatting functions
+library(gridExtra) # for arranging plots
+library(readxl)
+library(ggpubr)
+
+# fire temp data for tree 151 and 152 in F and C
+data_1 <- read_excel("Prescribed_fire_151_152_temp_data.xlsx")
+
+# fire temp data for tree 221 and 222 in F and C
+data_2 <- read_excel("Prescribed_fire_221_222_temp_data.xlsx")
+```
+
+```{r data 1 (151 and 152)}
+# convert time to Date class
+data_1$Time <- as_datetime(data_1$Time)
+
+#plot using ggplot
+p1 <- ggplot(data_1, aes(Time, Tree_151_C)) +
+  geom_line(na.rm = TRUE, size = 1) +
+  ggtitle("Tree 151") +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+p1
+
+p2 <- ggplot(data_1, aes(Time, Tree_152_C)) +
+  geom_line(na.rm = TRUE, size = 1) +
+  ggtitle("Tree 152") +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+p2
+
+p3 <- ggplot(data_2, aes(Time, Tree_221_C)) +
+  geom_line(na.rm = TRUE, size = 1) +
+  ggtitle("Tree 221") +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+p3
+
+p4 <- ggplot(data_2, aes(Time, Tree_222_C)) +
+  geom_line(na.rm = TRUE, size = 1) +
+  ggtitle("Tree 222") +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+p4
+
+# arrange the figures
+grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2, 
+             left = text_grob("Temperature (C)", rot = 90),
+             bottom = text_grob("Time of the day"))
+
+# save figure
+tiff("fire_plot_trees.tiff",units = "in", height = 6, width = 7, res = 250)
+grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2, 
+             left = text_grob("Temperature (C)", rot = 90),
+             bottom = text_grob("Time of the day"))
+dev.off()
+```
+
+```{r avg temp achieved by the burn}
+temp_151 <- data_1$Tree_151_C
+temp_152 <- data_1$Tree_152_C
+temp_221 <- data_2$Tree_221_C
+temp_222 <- data_2$Tree_222_C
+all_temp <- c(temp_151, temp_152, temp_221, temp_222)
+boxplot(all_temp)
+mean(all_temp)
+sd(all_temp)
+```
+
+

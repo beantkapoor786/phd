@@ -1,0 +1,726 @@
+---
+title: "Soils_ITS"
+author: "Beant Kapoor"
+date: "3/23/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+### General Comment - Objects in this file contain the name 'otu' however they represent ASV in this case.
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r Import Data and Subset}
+#So we will be working with two dataframes 'seqtab_nochim' which is our ASV count table and 'taxa' which is our taxonomy table. First of all we have to make sure that column names in seqtab_nochim dataframe align correctly with the rownames of taxa dataframe.
+dim(seqtab_nochim) #There are 218 rows (samples) and 13205 columns (ASVs)
+dim(taxa) #There are 13205 rows (ASVs) and 7 columns (Taxa levels)
+
+#Next I import the metadata for the particular habitat of interest. In this case I am working with soils. I will use this metadata to subset the larger OTU file above.
+soils_its_metadata <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_soils.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+sample_name_soils_its <- soils_metadata_its$Sample
+
+#Here I use the subset function to pull out just the samples belonging to soils.
+soils_its_asv <- subset(seqtab_nochim, rownames(seqtab_nochim) %in% sample_name_soils)
+
+#Let's check that the previous function worked okay. The resulting table should have 40 rows and 13205 columns
+dim(soils_asv) #BRAVO!
+
+#Let's clean the table further. Here we are removing any ASVs which are not present in any of the samples. What the below function is doing is summing the columns (ASVs) and any ASV that equals 0 is removed from the dataset. This will hopefully speed up downstream analyses.
+soils_pure <- soils_asv[, colSums(soils_asv) > 0]
+dim(soils_pure) #40 rows and 4409 ASVs
+```
+
+```{r Rarefaction}
+#Below I create the rarefaction curves for each sample using the rarecurve function from vegan.
+library(vegan)
+rare_curve_soils <- rarecurve(soils_pure)
+
+#I then create an object that spans the range of the ESV richness. This will be used to plot the vertical line in my ggplot rarefaction curve. 
+f_soils<-(0:125000)
+
+#I then create objects containing the x and y coordinates values for each stratum.
+sequences_soils40<-attr(rare_curve_soils[[40]],which="Subsample")
+sequences_soils39<-attr(rare_curve_soils[[39]],which="Subsample")
+sequences_soils38<-attr(rare_curve_soils[[38]],which="Subsample")
+sequences_soils37<-attr(rare_curve_soils[[37]],which="Subsample")
+sequences_soils36<-attr(rare_curve_soils[[36]],which="Subsample")
+sequences_soils35<-attr(rare_curve_soils[[35]],which="Subsample")
+sequences_soils34<-attr(rare_curve_soils[[34]],which="Subsample")
+sequences_soils33<-attr(rare_curve_soils[[33]],which="Subsample")
+sequences_soils32<-attr(rare_curve_soils[[32]],which="Subsample")
+sequences_soils31<-attr(rare_curve_soils[[31]],which="Subsample")
+sequences_soils30<-attr(rare_curve_soils[[30]],which="Subsample")
+sequences_soils29<-attr(rare_curve_soils[[29]],which="Subsample")
+sequences_soils28<-attr(rare_curve_soils[[28]],which="Subsample")
+sequences_soils27<-attr(rare_curve_soils[[27]],which="Subsample")
+sequences_soils26<-attr(rare_curve_soils[[26]],which="Subsample")
+sequences_soils25<-attr(rare_curve_soils[[25]],which="Subsample")
+sequences_soils24<-attr(rare_curve_soils[[24]],which="Subsample")
+sequences_soils23<-attr(rare_curve_soils[[23]],which="Subsample")
+sequences_soils22<-attr(rare_curve_soils[[22]],which="Subsample")
+sequences_soils21<-attr(rare_curve_soils[[21]],which="Subsample")
+sequences_soils20<-attr(rare_curve_soils[[20]],which="Subsample")
+sequences_soils19<-attr(rare_curve_soils[[19]],which="Subsample")
+sequences_soils18<-attr(rare_curve_soils[[18]],which="Subsample")
+sequences_soils17<-attr(rare_curve_soils[[17]],which="Subsample")
+sequences_soils16<-attr(rare_curve_soils[[16]],which="Subsample")
+sequences_soils15<-attr(rare_curve_soils[[15]],which="Subsample")
+sequences_soils14<-attr(rare_curve_soils[[14]],which="Subsample")
+sequences_soils13<-attr(rare_curve_soils[[13]],which="Subsample")
+sequences_soils12<-attr(rare_curve_soils[[12]],which="Subsample")
+sequences_soils11<-attr(rare_curve_soils[[11]],which="Subsample")
+sequences_soils10<-attr(rare_curve_soils[[10]],which="Subsample")
+sequences_soils9<-attr(rare_curve_soils[[9]],which="Subsample")
+sequences_soils8<-attr(rare_curve_soils[[8]],which="Subsample")
+sequences_soils7<-attr(rare_curve_soils[[7]],which="Subsample")
+sequences_soils6<-attr(rare_curve_soils[[6]],which="Subsample")
+sequences_soils5<-attr(rare_curve_soils[[5]],which="Subsample")
+sequences_soils4<-attr(rare_curve_soils[[4]],which="Subsample")
+sequences_soils3<-attr(rare_curve_soils[[3]],which="Subsample")
+sequences_soils2<-attr(rare_curve_soils[[2]],which="Subsample")
+sequences_soils1<-attr(rare_curve_soils[[1]],which="Subsample")
+
+#Here I plot the rarefaction curves. 
+
+library(ggplot2)
+library(ggpubr)
+
+rarefaction_chart_soils <- ggplot() +
+  geom_line(aes(x=sequences_soils40,y=rare_curve_soils[[40]]),size=1)+
+  geom_line(aes(x=sequences_soils39,y=rare_curve_soils[[39]]), size=1)+
+  geom_line(aes(x=sequences_soils38,y=rare_curve_soils[[38]]),size=1)+
+  geom_line(aes(x=sequences_soils37,y=rare_curve_soils[[37]]),size=1)+
+  geom_line(aes(x=sequences_soils36,y=rare_curve_soils[[36]]),size=1)+
+  geom_line(aes(x=sequences_soils35,y=rare_curve_soils[[35]]),size=1)+
+  geom_line(aes(x=sequences_soils34,y=rare_curve_soils[[34]]), size=1)+
+  geom_line(aes(x=sequences_soils33,y=rare_curve_soils[[33]]), size=1)+
+  geom_line(aes(x=sequences_soils32,y=rare_curve_soils[[32]]),size=1)+
+  geom_line(aes(x=sequences_soils31,y=rare_curve_soils[[31]]),size=1 )+
+  geom_line(aes(x=sequences_soils30,y=rare_curve_soils[[30]]),size=1)+
+  geom_line(aes(x=sequences_soils29,y=rare_curve_soils[[29]]),size=1)+
+  geom_line(aes(x=sequences_soils28,y=rare_curve_soils[[28]]),size=1)+
+  geom_line(aes(x=sequences_soils27,y=rare_curve_soils[[27]]),size=1)+
+  geom_line(aes(x=sequences_soils26,y=rare_curve_soils[[26]]),size=1)+
+  geom_line(aes(x=sequences_soils25,y=rare_curve_soils[[25]]), size=1)+
+  geom_line(aes(x=sequences_soils24,y=rare_curve_soils[[24]]),size=1)+
+  geom_line(aes(x=sequences_soils23,y=rare_curve_soils[[23]]),size=1)+
+  geom_line(aes(x=sequences_soils22,y=rare_curve_soils[[22]]),size=1)+
+  geom_line(aes(x=sequences_soils21,y=rare_curve_soils[[21]]),size=1)+
+  geom_line(aes(x=sequences_soils20,y=rare_curve_soils[[20]]),size=1)+
+  geom_line(aes(x=sequences_soils19,y=rare_curve_soils[[19]]), size=1)+
+  geom_line(aes(x=sequences_soils18,y=rare_curve_soils[[18]]),size=1)+
+  geom_line(aes(x=sequences_soils17,y=rare_curve_soils[[17]]),size=1)+
+  geom_line(aes(x=sequences_soils16,y=rare_curve_soils[[16]]),size=1)+
+  geom_line(aes(x=sequences_soils15,y=rare_curve_soils[[15]]),size=1)+
+  geom_line(aes(x=sequences_soils14,y=rare_curve_soils[[14]]), size=1)+
+  geom_line(aes(x=sequences_soils13,y=rare_curve_soils[[13]]), size=1)+
+  geom_line(aes(x=sequences_soils12,y=rare_curve_soils[[12]]),size=1)+
+  geom_line(aes(x=sequences_soils11,y=rare_curve_soils[[11]]),size=1 )+
+  geom_line(aes(x=sequences_soils10,y=rare_curve_soils[[10]]),size=1)+
+  geom_line(aes(x=sequences_soils9,y=rare_curve_soils[[9]]),size=1)+
+  geom_line(aes(x=sequences_soils8,y=rare_curve_soils[[8]]),size=1)+
+  geom_line(aes(x=sequences_soils7,y=rare_curve_soils[[7]]),size=1)+
+  geom_line(aes(x=sequences_soils6,y=rare_curve_soils[[6]]),size=1)+
+  geom_line(aes(x=sequences_soils5,y=rare_curve_soils[[5]]), size=1)+
+  geom_line(aes(x=sequences_soils4,y=rare_curve_soils[[4]]),size=1)+
+  geom_line(aes(x=sequences_soils3,y=rare_curve_soils[[3]]),size=1)+
+  geom_line(aes(x=sequences_soils2,y=rare_curve_soils[[2]]),size=1)+
+  geom_line(aes(x=sequences_soils1,y=rare_curve_soils[[1]]),size=1)+
+  geom_path(aes(x=14563,y=f_soils), linetype=5)+
+  ylim(0, 600)+
+  xlim(0, 100000)+
+  theme(panel.grid.major=element_blank(),
+       panel.grid.minor=element_blank(),
+       panel.background = element_blank(),
+       panel.border=element_rect(color="black", size=1, fill=NA))+
+ theme(axis.title.x=element_text(size=14, face="bold"))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))+ 
+labs(x=("Sequencing Depth"), y=expression(bold(paste("ASV Richness", sep=""))))+
+  labs(title = 'Soils ITS')
+
+ggsave(filename = 'soils_ITS_rarefaction_curve.png', path = "/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results", rarefaction_chart_soils, dpi = 300, units = 'in', width = 5, height = 5)
+
+#Here we are rarefying the data using the rrarefy function from vegan. I first use the sort function to determine the lowest number of sequences in a sample. 
+sort(rowSums(soils_pure)) #14563
+
+#Then using the rrarefy function from vegan, I rarefy my samples. The rarefaction cutoff or "sample" value is determined by evaluating my rarefaction curves and choosing the number of sequences that minimizes sample loss but maximizes sampling depth.
+rare_otu_soils <- as.data.frame(rrarefy(soils_pure, sample = 14563)) #In this case we are not losing any samples therefore we do not need to perform any subsetting.
+
+#I am now removing ASVs present in the ASV table that were only present in samples removed following rarefaction. These ASVs will have column sums of 0.
+rare_otu_soils <- rare_otu_soils[, colSums(rare_otu_soils) > 0]
+
+#The following line is for saving the rarefied ASV table. This file is later reloaded to be used in downstream analyses. This is done to maintain consistency of results because rarefying generates slightly different results each time.
+#write.table(rare_otu_soils, "/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Tables_from_R/ITS_soils_rarefied_asv.shared", sep = '\t', row.names = TRUE, col.names = TRUE)
+
+#I am now removing singleton ASVs (ASVs with only 1 representative sequence following rarefaction). This is to limit the effects of rare species on our distance matrices used during ordination.  
+rare_otu_soils_no_singletons <- rare_otu_soils[, colSums(rare_otu_soils) > 1]
+
+#The following line is for saving the rarefied ASV table with singletons removed. This file is later reloaded to be used in downstream analyses. This is done to maintain consistency of results because rarefying generates slightly different results each time.
+write.table(rare_otu_soils_no_singletons, "/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Tables_from_R/ITS_soils_rarefied_no_singletons.shared", sep = '\t', row.names = TRUE, col.names = TRUE)
+```
+
+```{r Relative abundance Chart - Phylum}
+#Now that samples have been rarefied I can perform alpha and beta diversity analyses on my data sets. To begin I first reformat my ASV table so that I can do some filtering and add taxonomy information.
+rare_otu_soils_no_singletons <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Tables_from_R/ITS_soils_rarefied_no_singletons.shared", header = TRUE, sep = '\t')
+
+#I now transpose my ASV table so that I can begin to add in taxonomy information.
+trans_otu_soils <- as.data.frame(t(rare_otu_soils_no_singletons))
+
+#The below function is asking specifically for the ASV sequences in the soils ASV table. These are the row names. I will use these to subset the taxa file.
+soils_otu_names <- rownames(trans_otu_soils)
+soils_taxonomy <- subset(taxa, rownames(taxa) %in% soils_otu_names)
+
+#Let's duplicate the above object and then we will display the new object without the rownames as they are long sequences.
+soils_taxonomy_print <- soils_taxonomy 
+rownames(soils_taxonomy_print) <- NULL
+head(soils_taxonomy_print) #Good job
+
+#By inspecting the dataframe 'soils_taxonomy_print' we found out that we have to clean the taxonomy names. We will do this using regex.
+soils_taxonomy_print <- gsub(pattern = "^\\w__", replacement = "", x = soils_taxonomy_print)
+# Hooooohooo! That's a success! Now we can apply the same function to 'soils_taxonomy'
+
+soils_taxonomy <- gsub(pattern = "^\\w__", replacement = "", x = soils_taxonomy)
+
+#Now the two dataframes 'soils_taxanomy' and 'trans_otu_soils' are ready to be merged.
+soils_otu_taxonomy <- merge(soils_taxonomy, trans_otu_soils, by = 0)
+
+#We can get rid of the first column as they are already the rownames for the dataframe
+soils_otu_taxonomy <- soils_otu_taxonomy[, 2:48] #BEAUTIFUL!!!!
+
+#Let's create a dataframe which only consists of only the phylum column and the rarefied ASV table
+soils_otu_phylum <- soils_otu_taxonomy[, c(2, 8:47)] #I am on fire today!
+
+#My guess is down the road we don't really need the rownames so why not get rid of them already. They are making me crazy right now. If we will really need those names we can always come back and rerun the code. Let's do it.
+rownames(soils_otu_phylum) <- seq(1, nrow(soils_otu_phylum), by = 1) #Good job, it's so much cleaner.
+
+#Get rid of the rows where phylum assignments which are NAs. The resulting dataframes should have 2936 rows.
+soils_otu_phylum <- soils_otu_phylum[complete.cases(soils_otu_phylum), ]
+rownames(soils_otu_phylum) <- seq(1, nrow(soils_otu_phylum), by = 1)
+
+#The following code is for the generation of phylum relative abundance stacked bar charts. I first sum each ASV by the phylum it belongs to. 
+library(dplyr)
+soils_summed_otu_phylum <- as.data.frame(soils_otu_phylum %>% group_by(Phylum) %>% summarise_each(funs(sum)))
+rownames(soils_summed_otu_phylum) <- make.names(soils_summed_otu_phylum$Phylum)
+soils_summed_otu_phylum <- soils_summed_otu_phylum[, 2:41]
+
+#I then transpose the data frame so that sample names are now row names and column names are OTU names.
+trans_soils_otu_summed_phylum <- as.data.frame(t(soils_summed_otu_phylum))
+
+#Read in a new metadata file for soils to make relative abundance charts
+soils_metadata_for_rel_abund <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_soils_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+trans_soils_phylum_metadata <- merge(soils_metadata_for_rel_abund, trans_soils_otu_summed_phylum, by.x = 1, by.y = 0)
+rownames(trans_soils_phylum_metadata) <- make.names(trans_soils_phylum_metadata$Sample)
+trans_soils_phylum_metadata <- trans_soils_phylum_metadata[, 2:17]
+rownames(trans_soils_phylum_metadata) <- sub('X', '', rownames(trans_soils_phylum_metadata))
+
+#I then sum each OTU by Treatment column and subset to exclude sample names. This is because the following functions only work on matrices containing numeric data.
+soils_phylum_summed_treatment <- as.data.frame(trans_soils_phylum_metadata %>% group_by(Treatment) %>% summarise_each(funs(sum)))
+soils_phylum <- soils_phylum_summed_treatment[, 2:16]
+
+#I am now creating an other category. Other includes those OTUs belonging to a phylum that comprises less than 1% of the total community. This new object is reffered to as phylum_others.
+soils_phylum_others <- soils_phylum[, colSums(soils_phylum)/sum(soils_phylum) <= 0.01]
+soils_phylum_others_sum <- rowSums(soils_phylum_others)
+
+#I then create an object that contains all of the phyla that comprise more than 1% of the total community.
+soils_phylum_regular <- soils_phylum[, colSums(soils_phylum)/sum(soils_phylum) > 0.01]
+
+#I then create a dataframe containing the treatment information, the Other column and the remaining phyla
+soils_phylum_reg_others <- data.frame(Treatment = soils_phylum_summed_treatment$Treatment, soils_phylum_regular, Others = soils_phylum_others_sum)
+
+#These values are then converted to relative abundance using the decostand function from vegan. 
+library(vegan)
+soils_phylum_rel_abund <- decostand(soils_phylum_reg_others[, 2:7], method = 'total')
+soils_phylum_rel_abund <- data.frame(Treatment = soils_phylum_reg_others$Treatment, soils_phylum_rel_abund)
+
+#Below I use the melt function from the data.table package to reformat the data into stacked bar graph format. 
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(RColorBrewer)
+soils_phylum_melt <- melt(soils_phylum_rel_abund, id.vars = 'Treatment', variable.name = 'Phylum')
+soils_colors_n_phylum <- length(unique(soils_phylum_melt[, 'Phylum']))
+soils_phylum_melt$Treatment <- as.character(soils_phylum_melt$Treatment)
+soils_phylum_melt$Treatment <- factor(soils_phylum_melt$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results/ITS_soils_relative_abundance_phylum.tiff", units = 'in', width = 7, height = 7, res = 200)
+soils_rel_phylum <- ggplot(soils_phylum_melt, aes(x = Treatment, y = value, fill = Phylum))+
+  geom_bar(stat = 'identity', show.legend = TRUE, color = 'black')+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(soils_colors_n_phylum))+
+  xlab('Soils')+
+  ylab('Relative Abundance')+
+  ggtitle('ITS Soils at phylum level')+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 14, color = 'black', angle = 90), axis.ticks.x = element_blank(), axis.text.y = element_text(size = 14), axis.line.y.left = element_line(), axis.title.y = element_text(size = 16))
+dev.off()
+```
+
+# The following chunk creates a relative abundance chart at the class level.
+
+```{r Relative abundance chart - Class}
+library(plyr)
+soils_otu_class <- soils_otu_taxonomy[, c(3, 8:47)]
+
+#Get rid of the rows where class assignments are NAs. The resulting dataframe should have 2644 rows.
+soils_otu_class <- soils_otu_class[complete.cases(soils_otu_class), ]
+
+#Using dplyr approach to sum each class assignment together
+soils_summed_otu_class <- as.data.frame(soils_otu_class %>% group_by(Class) %>% summarise_each(funs(sum)))
+rownames(soils_summed_otu_class) <- make.names(soils_summed_otu_class$Class)
+soils_summed_otu_class <- soils_summed_otu_class[, 2:41]
+
+#I then transpose the data frame so that sample names are now row names and column names are Class names.
+trans_soils_otu_summed_class <- as.data.frame(t(soils_summed_otu_class))
+
+#Read in a new metadata file for soils to make relative abundance charts
+soils_metadata_for_rel_abund <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_soils_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+trans_soils_class_metadata <- merge(soils_metadata_for_rel_abund, trans_soils_otu_summed_class, by.x = 1, by.y = 0)
+
+#After this point we don't really need the sample names column so we will delete it
+trans_soils_class_metadata <- trans_soils_class_metadata[, 2:49]
+
+#I then sum each Class by Treatment column and subset to exclude sample names. This is because the following functions only work on matrices containing numeric data.
+soils_class_summed_treatment <- as.data.frame(trans_soils_class_metadata %>% group_by(Treatment) %>% summarise_each(funs(sum)))
+soils_class <- soils_class_summed_treatment[, 2:48]
+
+#I am now creating an other category. Other includes those OTUs belonging to a class that comprises less than 3% of the total community. This new object is reffered to as class_others.
+soils_class_others <- soils_class[, colSums(soils_class)/sum(soils_class) <= 0.02]
+soils_class_others_sum <- rowSums(soils_class_others)
+
+#I then create an object that contains all of the classes that comprise more than 3% of the total community.
+soils_class_regular <- soils_class[, colSums(soils_class)/sum(soils_class) > 0.02]
+
+#I then create a dataframe containing the treatment information, the Other column and the remaining phyla
+soils_class_reg_others <- data.frame(Treatment = soils_class_summed_treatment$Treatment, soils_class_regular, Others = soils_class_others_sum)
+
+#These values are then converted to relative abundance using the decostand function from vegan. 
+library(vegan)
+soils_class_rel_abund <- decostand(soils_class_reg_others[, 2:10], method = 'total')
+soils_class_rel_abund <- data.frame(Treatment = soils_class_reg_others$Treatment, soils_class_rel_abund)
+
+#Below I use the melt function from the data.table package to reformat the data into stacked bar graph format. 
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(RColorBrewer)
+soils_class_melt <- melt(soils_class_rel_abund, id.vars = 'Treatment', variable.name = 'Class')
+soils_colors_n_class <- length(unique(soils_class_melt[, 'Class']))
+soils_class_melt$Treatment <- as.character(soils_class_melt$Treatment)
+soils_class_melt$Treatment <- factor(soils_class_melt$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results/ITS_soils_relative_abundance_class.tiff", units = 'in', width = 7, height = 7, res = 200)
+soils_rel_class <- ggplot(soils_class_melt, aes(x = Treatment, y = value, fill = Class))+
+  geom_bar(stat = 'identity', show.legend = TRUE, color = 'black')+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(soils_colors_n_class))+
+  xlab('Soils')+
+  ylab('Relative Abundance')+
+  ggtitle('ITS Soils at class level')+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 14, color = 'black', angle = 90), axis.ticks.x = element_blank(), axis.text.y = element_text(size = 14), axis.line.y.left = element_line(), axis.title.y = element_text(size = 16))
+dev.off()
+
+#Let's join the relative abundance charts at phylum level and class level together
+tiff(filename = "/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results/ITS_soils_phylum_class_rel_abund.tiff", units = 'in', width = 13, height = 7, res = 200)
+ggarrange(soils_rel_phylum, soils_rel_class, nrow = 1, labels = c("I", "II"), align = 'h')
+dev.off()
+```
+
+# The following code is used to generate the Principal Coordinate Analysis chart
+
+```{r Principal Coordinate Analyses}
+rare_otu_soils_no_singletons_its <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Tables_from_R/ITS_soils_rarefied_no_singletons.shared", header = TRUE, sep = '\t')
+
+soils_metadata_for_rel_abund_its <-  read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/metadata/ITS_soils_for_relative_abundance.txt", header = TRUE, fill = TRUE, strip.white = TRUE)
+
+#We will start with the object named 'rare_otu_soils_no_singletons'
+library(vegan)
+rare_soils_rel_abund_for_pcoa_its <- decostand(rare_otu_soils_no_singletons_its, method = 'total')
+
+#Need to load the library 'ape' and use the vegdist function to create a dissimilarity matrix using the Bray Curtis distance
+library(ape)
+soils_dist_its <- vegdist(rare_soils_rel_abund_for_pcoa_its, method = 'bray')
+soils_pcoa_its <- pcoa(soils_dist_its)
+soils_pcoa_vectors_its <- as.data.frame(soils_pcoa_its$vectors)
+soils_pcoa_vectors_metadata_its <- merge(soils_metadata_for_rel_abund_its, soils_pcoa_vectors_its, by.x = 1, by.y = 0)
+biplot(soils_pcoa_its, plot.axes = c(1, 2))
+soils_pcoa_scores_its <- data.frame(PC1 = soils_pcoa_vectors_its$Axis.1, PC2 = soils_pcoa_vectors_its$Axis.2)
+soils_pcoa_ellipse_its <- ordiellipse(soils_pcoa_scores_its, soils_pcoa_vectors_metadata_its$Treatment)
+
+#Plot the eigenvalues and interpret
+barplot(soils_pcoa_its$values$Relative_eig[1:10])
+
+# Find out the percentage variance explained by the first two principal axes
+soils_pcoa_its$values$Relative_eig[1] * 100 #10.21
+soils_pcoa_its$values$Relative_eig[2] * 100 #6.75
+
+#Extract the plot scores from first two PCoA axes
+soils_pcoa_axes_its <- soils_pcoa_its$vectors[, c(1, 2)]
+
+#In order to change the color scheme of PCoA we will have to add one more column to the dataframe 'soils_pcoa_vectors_metadata'
+soils_treatment_pcoa_color_its <- c('Burn_B', 'Burn_B','Burn_B','Burn_B','Burn_B', 'Burn_C', 'Burn_C','Burn_C','Burn_C','Burn_C', 'Control_D','Control_D','Control_D','Control_D', 'Control_D', 'Control_A', 'Control_A','Control_A','Control_A','Control_A', 'Burn_B', 'Burn_B','Burn_B','Burn_B','Burn_B', 'Burn_C', 'Burn_C','Burn_C','Burn_C','Burn_C', 'Control_D', 'Control_D','Control_D','Control_D','Control_D', 'Control_A', 'Control_A','Control_A','Control_A','Control_A')
+soils_pcoa_vectors_metadata_its <- data.frame(Treatment_color = soils_treatment_pcoa_color_its, soils_pcoa_vectors_metadata_its)
+
+year_permanova_soils_its <- c("2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019")
+
+#tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/soils_ITS/Results/ITS_soils_PCOA.tiff", units = 'in', width = 10, height = 7, res = 200)
+soils_pcoa_its <- ggplot(soils_pcoa_scores_its, aes(PC1, PC2, color = soils_pcoa_vectors_metadata_its$Treatment_color))+
+  geom_point(size = 2, aes(shape = year_permanova_soils_its))+
+  labs(shape = 'Year')+
+  ggtitle('Soils ITS')+
+  xlab('Principal Axis 1 (10.21%)')+
+  xlim(c(-0.6, 0.6))+
+  ylab('Principal Axis 2 (6.75%)')+
+  theme_linedraw()+
+  #scale_color_discrete(name = 'Niches')+
+  theme(plot.title = element_text(family = 'Arial', size=12, face="bold"))+
+  theme(axis.title.x=element_text(family = 'Arial', size=10))+
+  theme(axis.title.y=element_text(family = 'Arial', size=10))+
+  theme(axis.text.x=element_text(family = 'Arial', size=10))+
+  theme(axis.text.y=element_text(family = 'Arial', size=10))+
+  theme(legend.title = element_text(family = 'Arial', face = 'bold', size = 14))+
+  theme(legend.text = element_text(size = 14, family = 'Arial'))+
+  scale_color_brewer(palette = 'Set1', name = 'Treatment')
+dev.off()
+```
+
+# The purpose of this code is to do PERMANOVA on the WHOLE data
+
+```{r}
+# PERMANOVA without plot information
+treatment_soils_whole <- c("Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control","Control","Control","Control","Control","Control","Control","Control","Control","Control","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Burned","Control","Control","Control","Control","Control","Control","Control","Control","Control","Control")
+
+year_permanova_soils <- c("2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019")
+
+soils_permanova_whole <- adonis(rare_soils_rel_abund_for_pcoa~treatment_soils_whole + year_permanova_soils + treatment_soils_whole * year_permanova_soils, method = 'bray', permutations = 10000)
+soils_permanova_whole
+
+soils_plot <- c("B","B","B","B","B","C","C","C","C","C","D","D","D","D","D","A","A","A","A","A","B","B","B","B","B","C","C","C","C","C","D","D","D","D","D","A","A","A","A","A")
+
+#PERMANOVA with plot information
+soils_permanova_whole_plot <- adonis(rare_soils_rel_abund_for_pcoa ~ treatment_soils_whole +  year_permanova_soils + soils_plot + treatment_soils_whole * year_permanova_soils * soils_plot, method = 'bray', permutations = 10000)
+soils_permanova_whole_plot
+```
+
+# The purpose of the following chunk is to create Shannon Alpha diversity boxplots across treatments
+
+```{r Alpha Diversity}
+# We will calculate alpha diversity of the soils microbial communities using the diversity function from the vegan package. We are going to work with the 'rare_otu_soils' because the structure of this dataset behaves as vegan community matrix data.
+soils_alpha_diversity <- as.data.frame(diversity(rare_otu_soils, index = 'shannon'))
+
+# Let's add treatment and year columns to the soils_alpha_diversity dataframe
+treatment_soils_whole
+year_permanova_soils
+soils_alpha_diversity_treatment <- data.frame(Treatment = treatment_soils_whole, Year = year_permanova_soils, soils_alpha_diversity)
+colnames(soils_alpha_diversity_treatment)[3] <- 'Shannon_alpha_diversity'
+
+#Write this dataframe to the csv file
+write.csv(soils_alpha_diversity_treatment, file = "/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Tables_from_R/ITS_soils_shannon.csv")
+
+#Adding in the metadata for graph
+soils_alpha_metadata <- merge(soils_metadata_for_rel_abund, soils_alpha_diversity, by.x = 1, by.y = 0)
+rownames(soils_alpha_metadata) <- make.names(soils_alpha_metadata$Sample)
+soils_alpha_metadata <- soils_alpha_metadata[, 2:3]
+rownames(soils_alpha_metadata) <- sub('X', '', rownames(soils_alpha_metadata))
+soils_alpha_metadata$Treatment <- as.character(soils_alpha_metadata$Treatment)
+soils_alpha_metadata$Treatment <- factor(soils_alpha_metadata$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+colnames(soils_alpha_metadata)[2] <- 'shannon_index'
+
+#Let's make the graph now
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results/ITS_soils_alpha_shannon_index.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggplot(soils_alpha_metadata, aes(x = Treatment, y = shannon_index, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Soils ITS Alpha Diversity')+
+  ylab('Shannon Diversity Index')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#We have to make one more chart without legend
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results/ITS_soils_alpha_shannon_index_without_legend.tiff", units = 'in', width = 10, height = 7, res = 200)
+soils_alpha_without_legend <- ggplot(soils_alpha_metadata, aes(x = Treatment, y = shannon_index, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Soils ITS Alpha Diversity')+
+  ylab('Shannon Index')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  theme(legend.position = 'none')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+```
+
+# As suggested by Dr. Cregger, the purpose of this code is to generate hill number analysis
+
+```{r Hill Number}
+# install iNEXT from github
+install.packages('devtools')
+library(devtools) 
+install_github('JohnsonHsieh/iNEXT')
+
+# import packages library(iNEXT) library(ggplot2)
+library(iNEXT) 
+library(ggplot2)
+
+# Transposing the dataframe 'soils_pure' to convert it into the format the package 'iNEXT' wants it to be
+trans_soils_pure <- as.data.frame(t(soils_pure))
+
+#The rownames of the above dataframe are the sequences of the ASVs. We don't really require these in our downstream analysis so it's better to get rid of them as they make it harder to display and explore the dataframe.
+rownames(trans_soils_pure) <- NULL
+
+#Now the dataframe is ready for the hill number analysis. We will use the basic function iNEXT.
+soils_hill <- iNEXT(trans_soils_pure, q = c(0, 1, 2), datatype = "abundance")
+```
+
+# The purpose of the following code is generate the boxplots for richness values and find differences across treatments
+
+```{r}
+library(vegan)
+soils_richness <- specnumber(rare_otu_soils)
+soils_richness_df <- data.frame(soils_alpha_metadata, Richness = soils_richness)
+soils_richness_df <- soils_richness_df[, -2]
+soils_richness_df$Treatment <- as.character(soils_richness_df$Treatment)
+soils_richness_df$Treatment <- factor(soils_richness_df$Treatment, levels = c('Pre_control_A', 'Post_control_A', 'Pre_control_D', 'Post_control_D', 'Pre_burn_B', 'Post_burn_B', 'Pre_burn_C', 'Post_burn_C'))
+
+#The following code is for the anova of richness values
+soils_richness_metadata <- data.frame(Plot = plot_tree_soils, Year = year_permanova_soils, Treatment = treatment_soils_whole, Richness = soils_richness)
+
+#Order factors by order in dataframe, otherwise, R will alphabetize them
+soils_richness_metadata$Treatment <- factor(soils_richness_metadata$Treatment, levels = unique(soils_richness_metadata$Treatment))
+
+#Make the Year column numeric
+soils_richness_metadata$Year <- as.numeric(soils_richness_metadata$Year)
+
+#Code for the analysis
+library(nlme)
+soils_model_richness <- lme(Richness ~ Treatment + Year + Treatment*Year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = soils_richness_metadata, method = "REML")
+library(car)
+Anova(soils_model_richness)
+
+# This is the graph with legend
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results/ITS_soils_richness.tiff", units = 'in', width = 10, height = 7, res = 200)
+ggplot(soils_richness_df, aes(x = Treatment, y = Richness, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Soils ITS Richness')+
+  ylab('ASV Richness')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Let's make the graph without legend
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results/ITS_soils_richness_without_legend.tiff", units = 'in', width = 8, height = 7, res = 200)
+soils_richness_chart_without_legend <- ggplot(soils_richness_df, aes(x = Treatment, y = Richness, fill = Treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle('Soils ITS Richness')+
+  ylab('ASV Richness')+
+  xlab('Treatment')+
+  theme_linedraw()+
+  theme(axis.title.x = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(plot.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.x = element_text(family = 'Times New Roman', size = 14, colour = 'black', face = 'bold', angle = 90))+
+  theme(axis.title.y = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(axis.text.y = element_text(family = 'Times New Roman', size = 14, face = 'bold'))+
+  theme(legend.title = element_text(family = 'Times New Roman', face = 'bold', size = 18))+
+  theme(legend.text = element_text(size = 18, family = 'Times New Roman'))+
+  theme(legend.position = 'none')+
+  scale_fill_brewer(palette = 'Set1')+
+  guides(fill=guide_legend(title = 'Treatment'))
+dev.off()
+
+#Now let's combine the alpha diversity and richness chart using ggarrange
+tiff("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Results/ITS_soils_richness_and_shannon.tiff", units = 'in', height = 10, width = 8, res = 300)
+ggarrange(soils_richness_chart_without_legend + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()), soils_alpha_without_legend,  ncol = 1, labels = c("I", "II"), align = 'v', hjust = -3)
+dev.off()
+```
+
+#The purpose of this code chunk is to find differences in shannon alpha diversity across treatments.
+
+```{r Differences in shannon index}
+#We have to generate a new object for plot information
+plot_tree_soils <- c("B_1", "B_2","B_3","B_4","B_5", "C_1", "C_2","C_3","C_4","C_5", "D_1", "D_2", "D_3", "D_4", "D_5", "A_1", "A_2","A_3","A_4","A_5","B_1", "B_2","B_3","B_4","B_5", "C_1", "C_2","C_3","C_4","C_5", "D_1", "D_2", "D_3", "D_4", "D_5", "A_1", "A_2","A_3","A_4","A_5")
+
+#We will start with object 'soils_alpha_diversity_treatment' and add one more column to it and that is plot information
+soils_plot_shannon <- data.frame(Plot = plot_tree_soils, Year = year_permanova_soils, Treatment = treatment_soils_whole, soils_alpha_metadata)
+soils_plot_shannon <- soils_plot_shannon[, -4]
+colnames(soils_plot_shannon)[4] <- "Shannon_index"
+
+#Install required packages if they are not already installed
+if(!require(psych)){install.packages("psych")}
+if(!require(nlme)){install.packages("nlme")}
+if(!require(car)){install.packages("car")}
+if(!require(multcompView)){install.packages("multcompView")}
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(ggplot2)){install.packages("ggplot2")}
+if(!require(rcompanion)){install.packages("rcompanion")}
+
+#Order factors by order in dataframe, otherwise, R will alphabetize them
+soils_plot_shannon$Treatment <- factor(soils_plot_shannon$Treatment, levels = unique(soils_plot_shannon$Treatment))
+
+#Convert the Year column to numeric
+soils_plot_shannon$Year <- as.numeric(soils_plot_shannon$Year)
+
+#Code for the analysis
+library(nlme)
+soils_model_alpha_diversity <- lme(Shannon_index ~ Treatment + Year + Treatment*Year, random = ~1|Plot, correlation = corAR1(form = ~ Year | Plot, value = 0.4287), data = soils_plot_shannon, method = "REML")
+library(car)
+Anova(soils_model_alpha_diversity)
+```
+
+#To identify the role of soil physicochemical variables in driving differences in soil fungal community composition I perform a Constrained Correspondence Analysis (CCA). TO perform the CCA, I import the soil physicochemical data, assess soil matrix for multi-collinearity, perform model selection, construct a CCA biplot.
+
+#Soil Data Import and ASV Table merging
+
+##I will start with soils_nutrients and rare_asv_soils dataframe
+
+```{r Constrained Correspondence Analysis (CCA)}
+soils_nutrients_its <- soils_nutrients
+rare_asv_soils_its <- read.table("/Volumes/Beant_Kapoor/ITS_analysis_R/Soils_ITS/Tables_from_R/ITS_soils_rarefied_asv.shared", header = TRUE, sep = '\t')
+
+#In the soils_nutrients dataframe, let's replace the underscores in rownames with nothing
+rownames(soils_nutrients_its) <- gsub('_', '', rownames(soils_nutrients_its))
+
+#Just realized that we have to add "1ITS" at the end of the rownames of the soils_nutrients dataframe
+rownames(soils_nutrients_its) <- paste(rownames(soils_nutrients_its), "1ITS", sep = "")
+
+#let's merge these two dataframes using the rownames
+soils_otu_nutrients_its <- merge(soils_nutrients_its, rare_asv_soils_its, by = 0)
+
+#CCA and Model Selection. I then perform the CCA using cca function from vegan. Prior to performing the CCA, I remove the variables that are strongly positively correlated. I then perform the model selection using the ordistep function to determine which variables to retain in the model.
+
+#Below I create a matrix that consists of only soil physicochemical properties
+soils_physicochemical_its <- data.frame(soils_nutrients_its[, 3:17])
+
+#I then calculate the correlations for each soil variable to evaluate multicollinearity within the data
+soils_corrtest_its <- cor(soils_physicochemical_its, method = "pearson")
+
+#I plot the correlations using the corrplot function
+library(corrplot)
+corrplot(soils_corrtest_its, method = "number")
+
+#Looking at the correlation matrix we can keep pH, S, Zn, Mn and NH.N. All other variables are highly correlated with these major drivers of the bacterial community composition.
+soils_important_physicochemical_its <- data.frame(soils_nutrients_its[ , c(4, 6, 13, 15, 17)])
+
+#Let's do the correlation test on the above matrix too
+soils_imp_corrtest_its <- cor(soils_important_physicochemical_its, method = "pearson")
+corrplot(soils_imp_corrtest_its, method = "number") #Looks good.
+
+#I then create a matrix that consists only of the OTU table (must be numeric only)
+soils_prop_asv_its <- soils_otu_nutrients_its[, 19:4204]
+
+library(vegan)
+#Set seed to get consistent point placement in ordination space
+set.seed(786)
+
+#Perform CCA with cca function from vegan. The first CCA is the intercept only and the second is the full model. These are needed for the model selection in subsequent steps.
+soils_cca_intercept_its <- cca(soils_prop_asv_its ~ 1, data = soils_important_physicochemical_its)
+soils_ccaplot_its <- cca(soils_prop_asv_its ~ ., data = soils_important_physicochemical_its)
+
+#I evaluate multicollinearity one more time using the vif.cca function
+vif.cca(soils_ccaplot_its)
+
+#I then perform forward model selection using the ordistep function. An alternative method is to both directions or use the ordiR2step function.
+soils_cca_model_its <- ordistep(soils_cca_intercept_its, scope = soils_ccaplot_its, permutations = how(nperm = 999), trace = TRUE, direction = "forward")
+
+#To determine if soil physicochemical properties significantly explains the bacterial community perform permutation test with anova function. By including the 'by' argument we can identify significance of axes and model terms.
+anova(soils_cca_model_its, steps = 10000)
+
+#By axis
+anova(soils_cca_model_its, steps = 10000, by = "axis")
+
+#By terms
+anova(soils_cca_model_its, steps = 10000, by = "terms")
+
+# To obtain the information on axes, vectors etc. obtain CCA summary
+soils_cca_model_summary_its <- summary(soils_cca_model_its)
+
+#CCA Plot. Then to plot the CCA, I use the ggplot function. To use ggplot I need to first pull out the site scores for each sample, arrow coordinates, and generate ellipses.
+
+#Since vegna does not feed directly into ggplot you will need to extract scores for sites and vectors to make CCAs in gggplot. Begin by extracting site scores (these will be the x and y coordinates for each sample)
+soils_cca_site_scores_its <- as.data.frame(scores(soils_cca_model_summary_its, display = 'sites'))
+
+#Generate some metadata to add to the dataframe
+year_cca_soils <- c("2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2018","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019","2019")
+
+#Create a new dataframe that includes the site scores from above with metadata from your study
+soils_cca_graph_its <- data.frame(soils_cca_site_scores_its, CCA1 = soils_cca_site_scores_its$CCA1, CCA2 = soils_cca_site_scores_its$CCA2, Treatment = treatment_soils_nutrients, Year = year_cca_soils)
+
+#To create a biplot you need to extract vector scores as below. To extract vector scores you need to use the object that contains the summary for CCA
+soils_cca_arrows <- as.data.frame(soils_cca_model_summary$biplot)
+
+#Then you need to create an object that contains the labels for the soil arrows and the coordinates for the soil arrows
+soils_cca_labels <- labels(soils_cca_arrows)
+
+#Here I am pulling out the arrow scores that are significant
+soils_cca_arrows_ph1 <- soils_cca_arrows$CCA1[[c(1)]]
+soils_cca_arrows_ph2 <- soils_cca_arrows$CCA2[[c(1)]]
+soils_cca_arrows_ph <- data.frame(CCA1 = soils_cca_arrows_ph1, CCA2 = soils_cca_arrows_ph2)
+
+soils_cca_arrows_mn1 <- soils_cca_arrows$CCA1[[c(2)]]
+soils_cca_arrows_mn2 <- soils_cca_arrows$CCA2[[c(2)]]
+soils_cca_arrows_mn <- data.frame(CCA1 = soils_cca_arrows_mn1, CCA2 = soils_cca_arrows_mn2)
+
+#Here you determine the scaling factor for geom segment and geom point
+soils_cca_arrowmult <- ordiArrowMul(soils_cca_model_summary, display = "sites")
+
+#This is where you make confidence ellipses. I don't know what all the code means. Just know where to plug in my objects
+soils_cca_ellipse <- ordiellipse(soils_cca_site_scores, soils_cca_graph$Treatment, display = "sites", kind = "sd", draw = "none")
+
+df_ell_cca <- data.frame()
+for(g in levels(soils_cca_graph$Treatment)){
+  df_ell_cca <- rbind(df_ell_cca, cbind(as.data.frame(with(soils_cca_graph[soils_ccaplot$Treatment == g, ], vegan:::veganCovEllipse(soils_cca_ellipse[[g]]$cov, soils_cca_ellipse[[g]]$center, soils_cca_ellipse[[g]]$scale))), Treatment = g))
+}
+
+soils_cca_color <- length(unique(df_ell_cca$Treatment))
+#Plot CCA in ggplot
+library(ggplot2)
+
+soils_cca_chart <- ggplot(soils_cca_graph, aes(CCA1, CCA2, colour = Treatment))+
+  geom_point(size = 3)+
+  geom_path(data = df_ell_cca, aes(x = CCA1, y = CCA2, colour = Treatment), size = 1, linetype = 2)+
+  geom_text(data = soils_cca_arrows_ph, aes(x = 2*CCA1, y = 2*CCA2, label = 'pH', fontface = "bold"), inherit.aes = FALSE)+
+  geom_segment(data = soils_cca_arrows_ph, aes(x = 0, xend = 1.742239*CCA1, y = 0, yend = 1.742239 * CCA2), arrow = arrow(length = unit(0.25, "cm")), size = 0.5, linetype = 1, color = "black")+
+  geom_text(data = soils_cca_arrows_mn, aes(x = 2*CCA1, y = 2*CCA2, label = 'Mn', fontface = "bold"), inherit.aes = FALSE)+
+  geom_segment(data = soils_cca_arrows_mn, aes(x = 0, xend = 1.742239*CCA1, y = 0, yend = 1.742239 * CCA2), arrow = arrow(length = unit(0.25, "cm")), size = 0.5, linetype = 1, color = "black")+
+  scale_fill_manual(values = colorRampPalette(brewer.pal(7, 'Accent'))(soils_cca_color))+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border=element_rect(colour="black", size=1, fill=NA))+
+  theme(axis.title.x=element_text(size=14, face="bold"))+
+  scale_x_continuous(breaks=c(-3,-1.5,0,1.5,3),limits=c(-3,3))+
+  scale_y_continuous(breaks=c(-3,-1.5,0,1.5,3),limits=c(-3,3))+
+  theme(axis.title.y=element_text(size=14, face="bold"))+
+  theme(axis.text.x=element_text(size=12, face="bold"))+
+  theme(axis.text.y=element_text(size=12, face="bold"))
+  
+soils_cca_chart
+```
+
+
